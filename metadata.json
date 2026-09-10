@@ -1,0 +1,7 @@
+{
+  "name": "CyberMentor AI",
+  "description": "An interactive cybersecurity RPG adventure where digital survival knowledge is the gameplay mechanic.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+

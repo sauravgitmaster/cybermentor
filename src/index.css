@@ -1,0 +1,136 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --bg-base: #0a0c10;
+    --bg-surface: #11141a;
+    --bg-surface-raised: #161b22;
+    --border-subtle: #21262d;
+    --border-strong: #30363d;
+    --accent-cyan: #38bdf8;
+    --accent-blue: #2563eb;
+    --text-primary: #e6edf3;
+    --text-muted: #8b949e;
+    --text-dim: #484f58;
+    --warn-amber: #d29922;
+    --danger-red: #f85149;
+    --success-green: #3fb950;
+  }
+
+  body {
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: #0a0c10;
+    color: #e6edf3;
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    selection-background-color: #1f3554;
+    selection-color: #79c0ff;
+  }
+
+  code, pre, .font-mono {
+    font-family: 'Fira Code', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  }
+}
+
+/* Sharp, technical scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #0a0c10;
+}
+::-webkit-scrollbar-thumb {
+  background: #21262d;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #30363d;
+}
+
+/* Precision hairline rules & borders */
+.border-subtle {
+  border-color: #21262d;
+}
+.border-strong {
+  border-color: #30363d;
+}
+
+/* Walk Cycle Animation for PlayerAvatar */
+@keyframes walk-bob {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+}
+
+@keyframes leg-swing-left {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-2.5px) rotate(-8deg);
+  }
+  75% {
+    transform: translateY(1.5px) rotate(6deg);
+  }
+}
+
+@keyframes leg-swing-right {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  25% {
+    transform: translateY(1.5px) rotate(6deg);
+  }
+  75% {
+    transform: translateY(-2.5px) rotate(-8deg);
+  }
+}
+
+@keyframes arm-swing-left {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-1.5px) rotate(10deg);
+  }
+}
+
+@keyframes arm-swing-right {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-1.5px) rotate(-10deg);
+  }
+}
+
+.avatar-walk-bob {
+  animation: walk-bob 0.3s ease-in-out infinite;
+}
+
+.avatar-leg-left-moving {
+  transform-origin: top center;
+  animation: leg-swing-left 0.3s ease-in-out infinite;
+}
+
+.avatar-leg-right-moving {
+  transform-origin: top center;
+  animation: leg-swing-right 0.3s ease-in-out infinite;
+}
+
+.avatar-arm-left-moving {
+  transform-origin: top center;
+  animation: arm-swing-left 0.3s ease-in-out infinite;
+}
+
+.avatar-arm-right-moving {
+  transform-origin: top center;
+  animation: arm-swing-right 0.3s ease-in-out infinite;
+}
+
