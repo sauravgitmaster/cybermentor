@@ -9,9 +9,11 @@ import {
   ShieldCheck,
   AlertOctagon,
   ArrowRight,
+  Terminal,
 } from 'lucide-react';
 import { EvidenceItem, PlayerState } from '../types';
 import { playClickSound } from '../utils/audio';
+import { ForensicSandboxModal } from './ForensicSandboxModal';
 
 interface EvidenceNotebookProps {
   player: PlayerState;
@@ -24,6 +26,7 @@ export const EvidenceNotebook: React.FC<EvidenceNotebookProps> = ({
 }) => {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [isSandboxOpen, setIsSandboxOpen] = useState<boolean>(false);
 
   const categories = [
     'all',
@@ -80,9 +83,23 @@ export const EvidenceNotebook: React.FC<EvidenceNotebookProps> = ({
           </p>
         </div>
 
-        <div className="flex items-center gap-2 rounded border border-[#1e2637] bg-[#0e121a] px-3 py-1.5 text-xs font-mono text-slate-300">
-          <span>TOTAL LOGGED:</span>
-          <span className="font-bold text-cyan-400">{player.evidence.length} IOCs</span>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => {
+              playClickSound();
+              setIsSandboxOpen(true);
+            }}
+            className="flex items-center gap-1.5 rounded border border-cyan-500/60 bg-cyan-950/40 hover:bg-cyan-900/60 px-3 py-1.5 text-xs font-mono text-cyan-300 font-bold transition-colors shadow-xs"
+            title="Launch interactive server-side forensic inspection tools"
+          >
+            <Terminal className="h-3.5 w-3.5 text-cyan-400" />
+            <span>FORENSIC SANDBOX</span>
+          </button>
+
+          <div className="flex items-center gap-2 rounded border border-[#1e2637] bg-[#0e121a] px-3 py-1.5 text-xs font-mono text-slate-300">
+            <span>TOTAL LOGGED:</span>
+            <span className="font-bold text-cyan-400">{player.evidence.length} IOCs</span>
+          </div>
         </div>
       </div>
 
@@ -173,6 +190,11 @@ export const EvidenceNotebook: React.FC<EvidenceNotebookProps> = ({
             </div>
           ))}
         </div>
+      )}
+
+      {/* Forensic Sandbox Modal */}
+      {isSandboxOpen && (
+        <ForensicSandboxModal onClose={() => setIsSandboxOpen(false)} />
       )}
     </div>
   );

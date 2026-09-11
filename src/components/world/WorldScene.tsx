@@ -13,6 +13,7 @@ import {
   ArrowRight,
   Shield,
   Footprints,
+  Terminal,
 } from 'lucide-react';
 import { PlayerState, WorldLocation, LocationId } from '../../types';
 import { Direction, WorldPosition, WorldInteractable, AreaExit, PlayableArea } from '../../types/world';
@@ -31,6 +32,7 @@ import { InteractionPrompt } from './InteractionPrompt';
 import { MobileControls } from './MobileControls';
 import { MentorUplinkModal } from './MentorUplinkModal';
 import { DialogueBox } from './DialogueBox';
+import { ForensicSandboxModal } from '../ForensicSandboxModal';
 import { playClickSound, playInspectSound, playSuccessSound } from '../../utils/audio';
 
 interface WorldSceneProps {
@@ -83,6 +85,7 @@ export const WorldScene: React.FC<WorldSceneProps> = ({
   const [nearestExit, setNearestExit] = useState<AreaExit | null>(null);
   const [targetMovePos, setTargetMovePos] = useState<WorldPosition | null>(null);
   const [isMentorModalOpen, setIsMentorModalOpen] = useState<boolean>(false);
+  const [isForensicModalOpen, setIsForensicModalOpen] = useState<boolean>(false);
   const [activeDialogue, setActiveDialogue] = useState<NPCDialogue | null>(null);
   const [inspectModal, setInspectModal] = useState<{ title: string; text: string } | null>(null);
   const [areaTitleBanner, setAreaTitleBanner] = useState<string | null>(() => currentArea.name);
@@ -622,6 +625,19 @@ export const WorldScene: React.FC<WorldSceneProps> = ({
 
         {/* Action Buttons */}
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => {
+              playClickSound();
+              setIsForensicModalOpen(true);
+            }}
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded border border-cyan-500/50 bg-cyan-950/50 hover:bg-cyan-900/60 text-cyan-300 text-[10px] font-bold uppercase transition-colors shadow-xs"
+            title="Open SecOps Forensic Sandbox Terminal"
+          >
+            <Terminal className="h-3.5 w-3.5 text-cyan-400" />
+            <span className="hidden sm:inline">Forensic Sandbox</span>
+            <span className="sm:hidden">Sandbox</span>
+          </button>
+
           {onToggleTacticalView && (
             <button
               onClick={() => {
@@ -979,7 +995,16 @@ export const WorldScene: React.FC<WorldSceneProps> = ({
             setIsMentorModalOpen(false);
             onNavigateTab(tab);
           }}
+          onOpenForensicSandbox={() => {
+            setIsMentorModalOpen(false);
+            setIsForensicModalOpen(true);
+          }}
         />
+      )}
+
+      {/* Forensic Sandbox Terminal Modal */}
+      {isForensicModalOpen && (
+        <ForensicSandboxModal onClose={() => setIsForensicModalOpen(false)} />
       )}
     </div>
   );

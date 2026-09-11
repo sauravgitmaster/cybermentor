@@ -12,6 +12,7 @@ import {
   savePlayerState,
   resetPlayerState,
 } from './data/initialState';
+import { api } from './services/api';
 import { GameHeader } from './components/GameHeader';
 import { LandingIntro } from './components/LandingIntro';
 import { WorldMap } from './components/WorldMap';
@@ -41,7 +42,22 @@ export default function App() {
   const [soundMuted, setSoundMuted] = useState<boolean>(false);
   const [isHelpOpen, setIsHelpOpen] = useState<boolean>(false);
 
-  // Save state whenever player state changes
+  // Initialize and synchronize with backend server
+  useEffect(() => {
+    api.getPlayerState().then((res) => {
+      if (res.online && res.operative) {
+        // Sync local with server state
+        api.syncPlayerState(player).then((synced) => {
+          if (synced) {
+            setPlayer(synced);
+            savePlayerState(synced);
+          }
+        });
+      }
+    });
+  }, []);
+
+  // Save state locally whenever player state changes
   useEffect(() => {
     savePlayerState(player);
   }, [player]);
@@ -53,6 +69,9 @@ export default function App() {
   };
 
   const handleRecordTrustChange = (delta: number, reason: string) => {
+    // Notify backend
+    api.recordTrustChange(delta, reason).catch(() => {});
+
     setPlayer((prev) => {
       const newScore = Math.max(0, Math.min(100, prev.digitalTrust + delta));
       const record: TrustChangeRecord = {
@@ -81,6 +100,9 @@ export default function App() {
   };
 
   const handleUnlockAbility = (abilityId: string) => {
+    // Notify backend
+    api.unlockAbility(abilityId).catch(() => {});
+
     setPlayer((prev) => ({
       ...prev,
       abilities: prev.abilities.map((a) =>
@@ -90,6 +112,9 @@ export default function App() {
   };
 
   const handleCompleteMission = (missionId: string) => {
+    // Notify backend
+    api.completeMission(missionId).catch(() => {});
+
     setPlayer((prev) => {
       if (prev.completedMissions.includes(missionId)) return prev;
 
@@ -113,6 +138,9 @@ export default function App() {
   };
 
   const handleAddEvidence = (item: EvidenceItem) => {
+    // Notify backend
+    api.addEvidence(item).catch(() => {});
+
     setPlayer((prev) => {
       if (prev.evidence.some((e) => e.title === item.title)) return prev;
       const updatedEvidence = [item, ...prev.evidence];
@@ -133,6 +161,9 @@ export default function App() {
   };
 
   const handleResetProgress = () => {
+    // Reset backend
+    api.resetPlayerState().catch(() => {});
+
     const fresh = resetPlayerState();
     setPlayer(fresh);
     setCurrentTab('home');
@@ -160,25 +191,27 @@ export default function App() {
       id="cybermentor-app-root"
       className="min-h-screen bg-[#0a0c10] text-[#e6edf3] font-sans selection:bg-[#1f3554] selection:text-[#79c0ff]"
     >
-      {/* Top Universal Operative HUD */}
-      <GameHeader
-        player={player}
-        activeTab={currentTab}
-        onSelectTab={(tab) => {
-          if (tab === 'world') {
-            setCurrentTab('world');
-          } else {
-            setCurrentTab(tab);
-          }
-        }}
-        soundMuted={soundMuted}
-        onToggleSound={handleToggleSound}
-        onOpenHelp={() => setIsHelpOpen(true)}
-        onResetProgress={handleResetProgress}
-      />
+      {/* Top Universal Operative HUD - Only shown inside active gameplay sessions */}
+      {currentTab !== 'home' && (
+        <GameHeader
+          player={player}
+          activeTab={currentTab}
+          onSelectTab={(tab) => {
+            if (tab === 'world') {
+              setCurrentTab('world');
+            } else {
+              setCurrentTab(tab);
+            }
+          }}
+          soundMuted={soundMuted}
+          onToggleSound={handleToggleSound}
+          onOpenHelp={() => setIsHelpOpen(true)}
+          onResetProgress={handleResetProgress}
+        />
+      )}
 
       {/* Main Content Area */}
-      <main className="min-h-[calc(100vh-68px)]">
+      <main className={currentTab === 'home' ? 'min-h-screen' : 'min-h-[calc(100vh-68px)]'}>
         {currentTab === 'home' && (
           <LandingIntro
             player={player}
@@ -190,6 +223,8 @@ export default function App() {
             onOpenScenarioOps={() => setCurrentTab('scenario-ops')}
             onOpenHowItWorks={() => setIsHelpOpen(true)}
             onNavigate={(tab) => setCurrentTab(tab)}
+            soundMuted={soundMuted}
+            onToggleSound={handleToggleSound}
           />
         )}
 
@@ -258,7 +293,15 @@ export default function App() {
       </main>
 
       {/* Educational Philosophy & How It Works Modal */}
-      {isHelpOpen && <HowItWorksModal onClose={() => setIsHelpOpen(false)} />}
+      {isHelpOpen && (
+        <HowItWorksModal
+          onClose={() => setIsHelpOpen(false)}
+          onStartPlaying={() => {
+            setIsHelpOpen(false);
+            handleSelectLocation('campus');
+          }}
+        />
+      )}
     </div>
   );
 }
