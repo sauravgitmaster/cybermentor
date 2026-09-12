@@ -60,11 +60,11 @@ export const LocationView: React.FC<LocationViewProps> = ({
   return (
     <div
       id="location-hub-view"
-      className="w-full min-h-[calc(100vh-62px)] flex flex-col items-center justify-center py-4 px-3 sm:py-8 sm:px-6 bg-[#090e17] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#132034] via-[#0b121e] to-[#070a10]"
+      className="w-full min-h-[calc(100dvh-62px)] flex flex-col items-center justify-center py-2 sm:py-4 md:py-8 px-2 sm:px-4 md:px-6 bg-[#090e17] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#132034] via-[#0b121e] to-[#070a10]"
     >
       {/* VIEW MODE 1: 2D RPG EXPLORATION LAYER (Spacious central game screen) */}
       {viewMode === 'rpg' ? (
-        <div className="w-full max-w-5xl flex flex-col items-center animate-in fade-in duration-300">
+        <div className="w-full max-w-6xl flex flex-col items-center animate-in fade-in duration-300">
           {/* Explorable 2D RPG World Scene */}
           <WorldScene
             location={location}

@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { PlayerState } from '../types';
 import { playClickSound } from '../utils/audio';
+import { useAdaptiveScreen } from '../hooks/useAdaptiveScreen';
 
 interface GameHeaderProps {
   player: PlayerState;
@@ -42,6 +43,7 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
   onOpenDailyChallenge,
   onResetProgress,
 }) => {
+  const screen = useAdaptiveScreen();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const unlockedAbilitiesCount = player.abilities.filter((a) => a.unlocked).length;
@@ -68,22 +70,22 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
   return (
     <header
       id="game-header"
-      className="sticky top-0 z-40 w-full border-b border-[#20324d] bg-[#0c1421]/90 backdrop-blur-md px-4 py-2.5 select-none"
+      className="sticky top-0 z-40 w-full border-b border-[#20324d] bg-[#0c1421]/90 backdrop-blur-md px-3 sm:px-4 py-2 sm:py-2.5 select-none pt-safe"
     >
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 sm:gap-4">
         {/* Simple Brand: Protagonist + Title */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <button
             id="header-brand-btn"
             onClick={() => {
               playClickSound();
               onSelectTab('home');
             }}
-            className="flex items-center gap-2.5 text-left focus:outline-none group cursor-pointer"
+            className="flex items-center gap-2 sm:gap-2.5 text-left focus:outline-none group cursor-pointer touch-target"
           >
             {/* Cute 2D RPG Protagonist mini sprite */}
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#314a70] bg-[#142236] group-hover:border-amber-400/80 transition-colors shadow-sm">
-              <svg width="22" height="22" viewBox="0 0 32 32">
+            <div className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-lg border border-[#314a70] bg-[#142236] group-hover:border-amber-400/80 transition-colors shadow-sm shrink-0">
+              <svg width="20" height="20" viewBox="0 0 32 32" className="sm:w-[22px] sm:h-[22px]">
                 <rect x="6" y="5" width="20" height="9" rx="3" fill="#92400e" />
                 <rect x="7" y="10" width="18" height="13" rx="3" fill="#e2b992" />
                 <rect x="10" y="14" width="3" height="3" fill="#0f172a" />
@@ -92,8 +94,8 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
                 <rect x="8" y="23" width="16" height="7" rx="2" fill="#0284c7" />
               </svg>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-bold tracking-wider text-slate-100 uppercase font-sans">
+            <div className="flex items-center gap-1 sm:gap-2">
+              <span className="text-xs sm:text-sm font-bold tracking-wider text-slate-100 uppercase font-sans">
                 CYBERMENTOR <span className="text-cyan-400 font-extrabold">AI</span>
               </span>
             </div>
@@ -101,7 +103,7 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
         </div>
 
         {/* Minimal Controls Area - Does not compete with the game world */}
-        <div className="flex items-center gap-2 relative" ref={menuRef}>
+        <div className="flex items-center gap-1.5 sm:gap-2 relative" ref={menuRef}>
           {/* Direct HOME Button */}
           <button
             id="nav-tab-home"
@@ -109,10 +111,10 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
               playClickSound();
               onSelectTab('home');
             }}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-slate-700/60 bg-slate-900/60 hover:bg-slate-800 text-xs font-semibold text-slate-200 hover:text-white transition-all cursor-pointer shadow-xs"
+            className="flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-xl border border-slate-700/60 bg-slate-900/60 hover:bg-slate-800 text-xs font-semibold text-slate-200 hover:text-white transition-all cursor-pointer shadow-xs touch-target min-h-[36px]"
           >
-            <Home className="h-4 w-4 text-amber-400" />
-            <span>HOME</span>
+            <Home className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-amber-400" />
+            <span className="hidden xs:inline">HOME</span>
           </button>
 
           {/* Contextual In-Game Systems Menu */}
@@ -122,14 +124,14 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
               playClickSound();
               setIsMenuOpen((prev) => !prev);
             }}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border transition-all cursor-pointer shadow-xs text-xs font-semibold ${
+            className={`flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-xl border transition-all cursor-pointer shadow-xs text-xs font-semibold touch-target min-h-[36px] ${
               isMenuOpen
                 ? 'border-amber-400/80 bg-amber-500/20 text-amber-300'
                 : 'border-slate-700/60 bg-slate-900/60 hover:bg-slate-800 text-slate-200 hover:text-white'
             }`}
             aria-label="Toggle Systems Menu"
           >
-            {isMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+            {isMenuOpen ? <X className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> : <Menu className="h-3.5 w-3.5 sm:h-4 sm:w-4" />}
             <span className="hidden sm:inline">SYSTEMS</span>
           </button>
 
@@ -138,12 +140,12 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
             id="header-sound-toggle-btn"
             onClick={onToggleSound}
             title={soundMuted ? 'Turn Sound On' : 'Turn Sound Off'}
-            className="p-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800/80 border border-slate-700/40 transition-colors cursor-pointer"
+            className="p-1.5 sm:p-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800/80 border border-slate-700/40 transition-colors cursor-pointer touch-target min-h-[36px] min-w-[36px] flex items-center justify-center"
           >
             {soundMuted ? (
-              <VolumeX className="h-4 w-4 text-slate-400" />
+              <VolumeX className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-slate-400" />
             ) : (
-              <Volume2 className="h-4 w-4 text-amber-400" />
+              <Volume2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-amber-400" />
             )}
           </button>
 
@@ -155,14 +157,14 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
               onOpenHelp();
             }}
             title="Guide & How It Works"
-            className="p-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800/80 border border-slate-700/40 transition-colors cursor-pointer"
+            className="p-1.5 sm:p-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800/80 border border-slate-700/40 transition-colors cursor-pointer touch-target min-h-[36px] min-w-[36px] flex items-center justify-center"
           >
-            <HelpCircle className="h-4 w-4 text-slate-300" />
+            <HelpCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-slate-300" />
           </button>
 
           {/* Dropdown Menu for Contextual Systems */}
           {isMenuOpen && (
-            <div className="absolute right-0 top-11 w-56 rounded-2xl border-2 border-[#2b4163] bg-[#0c1524]/98 shadow-2xl p-2 z-50 animate-in fade-in zoom-in-95 duration-150 backdrop-blur-md ring-1 ring-white/10">
+            <div className="absolute right-0 top-11 sm:top-12 w-60 max-w-[calc(100vw-1.5rem)] rounded-2xl border-2 border-[#2b4163] bg-[#0c1524]/98 shadow-2xl p-2.5 z-50 animate-in fade-in zoom-in-95 duration-150 backdrop-blur-md ring-1 ring-white/10">
               <div className="px-3 py-1.5 border-b border-[#1f314d] text-[10px] font-mono font-bold text-slate-400 uppercase tracking-wider">
                 Operative Systems
               </div>

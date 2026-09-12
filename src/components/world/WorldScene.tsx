@@ -36,6 +36,7 @@ import { MentorUplinkModal } from './MentorUplinkModal';
 import { DialogueBox } from './DialogueBox';
 import { ForensicSandboxModal } from '../ForensicSandboxModal';
 import { playClickSound, playInspectSound, playSuccessSound } from '../../utils/audio';
+import { useAdaptiveScreen } from '../../hooks/useAdaptiveScreen';
 
 interface WorldSceneProps {
   location: WorldLocation;
@@ -62,6 +63,7 @@ export const WorldScene: React.FC<WorldSceneProps> = ({
   onNavigateTab,
   onToggleTacticalView,
 }) => {
+  const screen = useAdaptiveScreen();
   const viewportRef = useRef<HTMLDivElement>(null);
   const [viewportSize, setViewportSize] = useState<{ w: number; h: number }>({
     w: 800,
@@ -584,33 +586,60 @@ export const WorldScene: React.FC<WorldSceneProps> = ({
     ? currentArea.resolvedObjective
     : currentArea.unresolvedObjective;
 
+  // Dynamic container & viewport height calculation based on device characteristics
+  let containerMaxW = 'max-w-4xl';
+  if (screen.isLargeDesktop) {
+    containerMaxW = 'max-w-5xl xl:max-w-6xl';
+  } else if (screen.isTablet) {
+    containerMaxW = 'max-w-3xl';
+  } else if (screen.isMobile) {
+    containerMaxW = 'w-full max-w-full';
+  }
+
+  let viewportHeightClass = 'h-[540px] sm:h-[640px] md:h-[680px]';
+  if (screen.isLargeDesktop) {
+    viewportHeightClass = 'h-[640px] lg:h-[720px]';
+  } else if (screen.isLaptop) {
+    viewportHeightClass = screen.isShortScreen ? 'h-[480px] lg:h-[520px]' : 'h-[540px] lg:h-[600px]';
+  } else if (screen.isTablet) {
+    viewportHeightClass = screen.isLandscape ? 'h-[480px] sm:h-[520px]' : 'h-[540px] sm:h-[600px]';
+  } else if (screen.isMobile) {
+    if (screen.isLandscape) {
+      viewportHeightClass = 'h-[320px] xs:h-[360px]';
+    } else if (screen.isShortScreen) {
+      viewportHeightClass = 'h-[420px]';
+    } else {
+      viewportHeightClass = 'h-[500px] sm:h-[540px]';
+    }
+  }
+
   return (
-    <div id="rpg-world-viewport-container" className="relative w-full max-w-4xl select-none mx-auto">
+    <div id="rpg-world-viewport-container" className={`relative w-full ${containerMaxW} select-none mx-auto`}>
       {/* Standalone Central Game Screen with Clean Game Frame */}
       <div
         ref={viewportRef}
-        className="relative w-full h-[540px] sm:h-[640px] md:h-[680px] rounded-2xl sm:rounded-3xl border-4 border-[#253957] bg-[#0c1424] shadow-[0_25px_60px_rgba(0,0,0,0.8)] overflow-hidden cursor-crosshair ring-1 ring-white/10"
+        className={`relative w-full ${viewportHeightClass} rounded-2xl sm:rounded-3xl border-3 sm:border-4 border-[#253957] bg-[#0c1424] shadow-[0_25px_60px_rgba(0,0,0,0.8)] overflow-hidden cursor-crosshair ring-1 ring-white/10`}
         style={{ touchAction: 'none' }}
       >
         {/* Top-Left In-Game HUD: Simple Location Badge */}
-        <div className="absolute top-4 left-4 z-30 pointer-events-auto flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#0a121e]/85 border border-[#2b3e5c] backdrop-blur-md shadow-lg">
-          <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
-          <span className="font-bold text-slate-100 text-xs sm:text-sm tracking-wide font-mono uppercase">
+        <div className="absolute top-2.5 sm:top-4 left-2.5 sm:left-4 z-30 pointer-events-auto flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full bg-[#0a121e]/85 border border-[#2b3e5c] backdrop-blur-md shadow-lg">
+          <span className="h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
+          <span className="font-bold text-slate-100 text-[11px] sm:text-xs md:text-sm tracking-wide font-mono uppercase truncate max-w-[130px] xs:max-w-[200px] sm:max-w-none">
             {location.name} <span className="text-amber-400">• {currentArea.name}</span>
           </span>
         </div>
 
         {/* Top-Right In-Game HUD: Minimal Trust Indicator + Quick Tools */}
-        <div className="absolute top-4 right-4 z-30 pointer-events-auto flex items-center gap-2">
+        <div className="absolute top-2.5 sm:top-4 right-2.5 sm:right-4 z-30 pointer-events-auto flex items-center gap-1.5 sm:gap-2">
           {/* Simple Trust Indicator */}
           <div
             id="trust-meter-display"
-            className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#0a121e]/85 border border-[#2b3e5c] backdrop-blur-md shadow-lg text-xs font-mono font-bold text-slate-200"
+            className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full bg-[#0a121e]/85 border border-[#2b3e5c] backdrop-blur-md shadow-lg text-[11px] sm:text-xs font-mono font-bold text-slate-200 touch-target"
             title="Digital Trust Score"
           >
-            <span className="text-amber-400 text-sm">🛡️</span>
+            <span className="text-amber-400 text-xs sm:text-sm">🛡️</span>
             <span className="text-amber-300 font-extrabold">{player.digitalTrust}</span>
-            <span className="text-slate-400 text-[11px]">/ 100</span>
+            <span className="text-slate-400 text-[10px] sm:text-[11px]">/ 100</span>
           </div>
 
           {/* Quick World Map Icon Button */}
@@ -619,7 +648,7 @@ export const WorldScene: React.FC<WorldSceneProps> = ({
               playClickSound();
               onBackToWorld();
             }}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#0a121e]/85 hover:bg-[#152338] border border-[#2b3e5c] hover:border-amber-400/80 text-amber-300 text-xs font-semibold backdrop-blur-md shadow-lg transition-all cursor-pointer"
+            className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full bg-[#0a121e]/85 hover:bg-[#152338] border border-[#2b3e5c] hover:border-amber-400/80 text-amber-300 text-xs font-semibold backdrop-blur-md shadow-lg transition-all cursor-pointer touch-target"
             title="Open Sector Map"
           >
             <Compass className="h-3.5 w-3.5 text-amber-400" />
@@ -632,10 +661,10 @@ export const WorldScene: React.FC<WorldSceneProps> = ({
               playClickSound();
               setIsForensicModalOpen(true);
             }}
-            className="p-1.5 rounded-full bg-[#0a121e]/85 hover:bg-[#152338] border border-[#2b3e5c] text-cyan-300 backdrop-blur-md shadow-lg transition-all cursor-pointer"
+            className="p-1 sm:p-1.5 rounded-full bg-[#0a121e]/85 hover:bg-[#152338] border border-[#2b3e5c] text-cyan-300 backdrop-blur-md shadow-lg transition-all cursor-pointer touch-target"
             title="Open Forensic Sandbox Terminal"
           >
-            <Terminal className="h-4 w-4" />
+            <Terminal className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
           </button>
         </div>
 

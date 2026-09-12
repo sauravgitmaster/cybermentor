@@ -32,6 +32,85 @@ import {
   playWarningSound,
   playInspectSound,
 } from '../utils/audio';
+import { useAdaptiveScreen } from '../hooks/useAdaptiveScreen';
+
+// Miniature 2D RPG World Diorama (Adventure Beginning Feeling)
+const RpgDioramaPreview: React.FC<{ isCompact?: boolean }> = ({ isCompact = false }) => {
+  return (
+    <div
+      id="intro-adventure-diorama"
+      className={`relative w-full ${
+        isCompact ? 'h-40 sm:h-44' : 'h-48 sm:h-52 lg:h-64'
+      } rounded-2xl border-2 border-slate-700/70 bg-gradient-to-b from-[#182638] via-[#142030] to-[#0d1624] shadow-xl overflow-hidden flex items-end justify-center`}
+    >
+      {/* Sky elements */}
+      <div className="absolute top-3 left-4 flex items-center gap-1.5">
+        <div className="w-1.5 h-1.5 rounded-full bg-amber-200/80 animate-pulse" />
+        <div className="w-1 h-1 rounded-full bg-sky-200/60 ml-4 animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="w-1.5 h-1.5 rounded-full bg-cyan-200/70 ml-8 animate-pulse" style={{ animationDelay: '2s' }} />
+      </div>
+
+      <div className="absolute top-3 right-5 flex items-center gap-1 opacity-75">
+        <Wifi className="h-3.5 w-3.5 text-cyan-400 animate-pulse" />
+        <span className="text-[9px] font-mono text-cyan-300 font-bold">CAMPUS SECTOR</span>
+      </div>
+
+      {/* Ground Grass & Cobblestone Path */}
+      <div className="absolute bottom-0 inset-x-0 h-14 bg-gradient-to-t from-[#1b4332] via-[#2d6a4f] to-[#40916c] border-t-2 border-[#52b788]/50" />
+      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-48 sm:w-56 h-12 bg-[#334155] border-t-2 border-x-2 border-[#475569] rounded-t-xl overflow-hidden shadow-inner flex flex-col justify-around px-2 py-0.5">
+        <div className="flex justify-around">
+          <div className="w-6 h-2 bg-[#64748b]/50 rounded-xs" />
+          <div className="w-8 h-2 bg-[#475569] rounded-xs" />
+          <div className="w-6 h-2 bg-[#64748b]/50 rounded-xs" />
+        </div>
+        <div className="flex justify-around">
+          <div className="w-8 h-2 bg-[#475569] rounded-xs" />
+          <div className="w-6 h-2 bg-[#64748b]/50 rounded-xs" />
+          <div className="w-8 h-2 bg-[#475569] rounded-xs" />
+        </div>
+      </div>
+
+      {/* Tree on left */}
+      <div className="absolute bottom-4 left-4 flex flex-col items-center pointer-events-none">
+        <div className="w-9 h-9 rounded-full bg-[#2d6a4f] border border-[#1b4332]" />
+        <div className="w-12 h-10 rounded-full bg-[#40916c] -mt-5" />
+        <div className="w-2.5 h-4 bg-[#543821] -mt-1 rounded-b" />
+      </div>
+
+      {/* Cyber Terminal on right */}
+      <div className="absolute bottom-4 right-4 flex flex-col items-center pointer-events-none">
+        <div className="w-8 h-7 rounded-lg bg-[#0f172a] border-2 border-cyan-400/90 shadow-md flex items-center justify-center">
+          <Shield className="h-3.5 w-3.5 text-cyan-300" />
+        </div>
+        <div className="w-2 h-2 bg-[#334155]" />
+        <div className="w-9 h-1.5 bg-[#1e293b] rounded-t-xs" />
+      </div>
+
+      {/* Hero Avatar In Center */}
+      <div className="relative z-10 flex flex-col items-center mb-2">
+        <div className="w-10 h-2.5 bg-black/45 rounded-full blur-[1px] translate-y-2" />
+        <div className="relative w-11 h-13 animate-bounce" style={{ animationDuration: '2.4s' }}>
+          <svg viewBox="0 0 36 40" className="w-11 h-13 drop-shadow-md" fill="none">
+            <rect x="10" y="27" width="5" height="7" rx="1" fill="#202938" />
+            <rect x="9.5" y="33" width="6" height="4.5" rx="1.5" fill="#f8fafc" stroke="#334155" strokeWidth="0.8" />
+            <rect x="21" y="27" width="5" height="7" rx="1" fill="#202938" />
+            <rect x="20.5" y="33" width="6" height="4.5" rx="1.5" fill="#f8fafc" stroke="#334155" strokeWidth="0.8" />
+            <rect x="8.5" y="15" width="19" height="13" rx="2.5" fill="#0369a1" stroke="#075985" strokeWidth="1" />
+            <line x1="10" y1="16" x2="26" y2="26" stroke="#f59e0b" strokeWidth="1.5" />
+            <circle cx="13" cy="20" r="1.8" fill="#fbbf24" stroke="#d97706" strokeWidth="0.6" />
+            <rect x="11" y="7" width="14" height="11" rx="3.5" fill="#fed7aa" />
+            <path d="M10 9 C10 3, 26 3, 26 9 C26 12, 24 10, 22 10 C20 10, 19 8, 17 10 C15 11, 13 9, 10 9 Z" fill="#78350f" />
+            <ellipse cx="14" cy="12" rx="1.2" ry="1.8" fill="#1e293b" />
+            <circle cx="14.3" cy="11.4" r="0.5" fill="#ffffff" />
+            <ellipse cx="22" cy="12" rx="1.2" ry="1.8" fill="#1e293b" />
+            <circle cx="22.3" cy="11.4" r="0.5" fill="#ffffff" />
+            <path d="M16.5 15 Q18 16.2 19.5 15" stroke="#9a3412" strokeWidth="0.8" fill="none" strokeLinecap="round" />
+          </svg>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 interface LandingIntroProps {
   player: PlayerState;
@@ -61,6 +140,14 @@ export const LandingIntro: React.FC<LandingIntroProps> = ({
   onCompleteSkillCheck,
   onResetProgress,
 }) => {
+  // Responsive screen characteristics detection
+  const screen = useAdaptiveScreen();
+  // Desktop/Laptop or wide tablet gets the spacious 2-column hero composition
+  const isWideHero =
+    screen.isLargeDesktop ||
+    screen.isLaptop ||
+    (screen.isTablet && screen.isLandscape && screen.viewportWidth >= 900);
+
   // If player has already completed skill check, they are a returning user!
   const isReturningUser = Boolean(player.skillCheckCompleted);
 
@@ -144,15 +231,15 @@ export const LandingIntro: React.FC<LandingIntroProps> = ({
     onStartAdventure();
   };
 
-  // Helper for rendering 10-block visual score bar
+  // Helper for rendering 10-block visual score bar with responsive sizing
   const renderVisualBlocks = (score: number, colorClass: string) => {
     const filledCount = Math.min(10, Math.max(1, Math.round(score / 10)));
     return (
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1 sm:gap-1.5 flex-nowrap">
         {Array.from({ length: 10 }).map((_, i) => (
           <span
             key={i}
-            className={`h-3 w-3 sm:h-3.5 sm:w-3.5 rounded-xs transition-all ${
+            className={`h-2.5 w-2.5 xs:h-3 xs:w-3 sm:h-3.5 sm:w-3.5 rounded-xs shrink-0 transition-all ${
               i < filledCount ? colorClass : 'bg-slate-800/80 border border-slate-700/40'
             }`}
           />
@@ -164,7 +251,9 @@ export const LandingIntro: React.FC<LandingIntroProps> = ({
   return (
     <div
       id="landing-page-root"
-      className="relative flex min-h-screen w-full flex-col items-center justify-center bg-[#0d1522] text-[#f1f5f9] px-4 py-8 sm:py-12 select-none overflow-x-hidden"
+      className={`relative flex min-h-screen min-h-[100dvh] w-full flex-col items-center justify-center bg-[#0d1522] text-[#f1f5f9] select-none overflow-x-hidden ${
+        screen.isShortScreen ? 'px-3 sm:px-6 py-4 sm:py-6' : 'px-4 sm:px-8 py-8 sm:py-12'
+      }`}
     >
       {/* Soft warm background atmosphere */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
@@ -365,215 +454,205 @@ export const LandingIntro: React.FC<LandingIntroProps> = ({
             CASE B: NEW USER FLOW
             FIRST EXPLAIN -> THEN ASSESS -> THEN PERSONALIZE -> THEN ENTER THE GAME
             ========================================================================= */
-        <div className="relative z-10 mx-auto flex w-full max-w-xl flex-col items-center">
+        <div
+          className={`relative z-10 mx-auto flex w-full flex-col items-center ${
+            onboardingStep === 'intro' ? 'max-w-5xl xl:max-w-6xl' : 'max-w-2xl'
+          }`}
+        >
           {/* -------------------------------------------------------------
               STEP 1: WELCOME / INTRO PAGE
               Explain the experience, What will I do here?, Why CyberMentor AI?
               ------------------------------------------------------------- */}
           {onboardingStep === 'intro' && (
-            <div className="w-full flex flex-col items-center text-center animate-in fade-in duration-200">
-              {/* Main Heading & Tagline */}
-              <div className="mb-4">
-                <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-white uppercase drop-shadow-sm flex items-center justify-center gap-2.5">
-                  <span>CYBERMENTOR</span>
-                  <span className="text-cyan-400 font-black">AI</span>
-                </h1>
-                <p className="mt-2 text-base sm:text-lg font-semibold text-amber-400 italic">
-                  "Your decisions leave a trace."
-                </p>
-                <p className="mt-2 text-xs sm:text-sm text-slate-300 max-w-md mx-auto leading-relaxed">
-                  CyberMentor AI is an interactive cybersecurity learning experience where you learn
-                  by making decisions in realistic digital situations.
-                </p>
-              </div>
+            <div className="w-full flex flex-col items-center animate-in fade-in duration-200">
+              {/* TOP HERO COMPOSITION:
+                  DESKTOP/LAPTOP: 2-COLUMN HERO (Intro content on left, RPG preview on right, CTA immediately visible)
+                  TABLET/MOBILE: CLEAN STACKED HERO */}
+              {isWideHero ? (
+                <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center mb-6 lg:mb-8 text-left">
+                  {/* Left Column: Title, Tagline, Description, and Prominent CTA */}
+                  <div className="lg:col-span-7 flex flex-col justify-center space-y-3 lg:space-y-4">
+                    <div className="space-y-1.5">
+                      <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white uppercase font-sans leading-tight">
+                        CYBERMENTOR <span className="text-cyan-400">AI</span>
+                      </h1>
+                      <p className="text-base sm:text-lg lg:text-xl font-bold text-amber-400 italic">
+                        "Your decisions leave a trace."
+                      </p>
+                    </div>
 
-              {/* Miniature 2D RPG World Diorama (Adventure Beginning Feeling) */}
-              <div
-                id="intro-adventure-diorama"
-                className="relative w-full h-44 sm:h-48 rounded-2xl border-2 border-slate-700/70 bg-gradient-to-b from-[#182638] via-[#142030] to-[#0d1624] shadow-xl overflow-hidden mb-6 flex items-end justify-center"
-              >
-                {/* Sky elements */}
-                <div className="absolute top-3 left-4 flex items-center gap-1.5">
-                  <div className="w-1.5 h-1.5 rounded-full bg-amber-200/80 animate-pulse" />
-                  <div className="w-1 h-1 rounded-full bg-sky-200/60 ml-4 animate-pulse" style={{ animationDelay: '1s' }} />
-                  <div className="w-1.5 h-1.5 rounded-full bg-cyan-200/70 ml-8 animate-pulse" style={{ animationDelay: '2s' }} />
-                </div>
+                    <p className="text-xs sm:text-sm lg:text-base text-slate-300 leading-relaxed max-w-xl">
+                      CyberMentor AI is an interactive cybersecurity learning experience where you learn
+                      by making decisions in realistic digital situations.
+                    </p>
 
-                <div className="absolute top-3 right-5 flex items-center gap-1 opacity-75">
-                  <Wifi className="h-3.5 w-3.5 text-cyan-400 animate-pulse" />
-                  <span className="text-[9px] font-mono text-cyan-300 font-bold">CAMPUS SECTOR</span>
-                </div>
-
-                {/* Ground Grass & Cobblestone Path */}
-                <div className="absolute bottom-0 inset-x-0 h-14 bg-gradient-to-t from-[#1b4332] via-[#2d6a4f] to-[#40916c] border-t-2 border-[#52b788]/50" />
-                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-48 sm:w-56 h-12 bg-[#334155] border-t-2 border-x-2 border-[#475569] rounded-t-xl overflow-hidden shadow-inner flex flex-col justify-around px-2 py-0.5">
-                  <div className="flex justify-around">
-                    <div className="w-6 h-2 bg-[#64748b]/50 rounded-xs" />
-                    <div className="w-8 h-2 bg-[#475569] rounded-xs" />
-                    <div className="w-6 h-2 bg-[#64748b]/50 rounded-xs" />
+                    {/* Primary CTA in Hero (Instantly visible above the fold on laptop/desktop!) */}
+                    <div className="pt-2">
+                      <button
+                        id="start-your-journey-btn"
+                        onClick={handleStartJourneyClick}
+                        className="group relative inline-flex items-center justify-center gap-3 px-8 py-3.5 sm:py-4 rounded-2xl bg-emerald-500 hover:bg-emerald-400 active:scale-[0.99] text-slate-950 shadow-xl shadow-emerald-500/25 hover:shadow-emerald-500/40 transition-all duration-150 cursor-pointer border border-emerald-300/70 text-base lg:text-lg font-black tracking-wide uppercase font-sans"
+                      >
+                        <span>START YOUR JOURNEY</span>
+                        <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex justify-around">
-                    <div className="w-8 h-2 bg-[#475569] rounded-xs" />
-                    <div className="w-6 h-2 bg-[#64748b]/50 rounded-xs" />
-                    <div className="w-8 h-2 bg-[#475569] rounded-xs" />
+
+                  {/* Right Column: RPG Diorama Preview */}
+                  <div className="lg:col-span-5 w-full flex justify-center">
+                    <RpgDioramaPreview isCompact={screen.isShortScreen} />
                   </div>
                 </div>
-
-                {/* Tree on left */}
-                <div className="absolute bottom-4 left-4 flex flex-col items-center pointer-events-none">
-                  <div className="w-9 h-9 rounded-full bg-[#2d6a4f] border border-[#1b4332]" />
-                  <div className="w-12 h-10 rounded-full bg-[#40916c] -mt-5" />
-                  <div className="w-2.5 h-4 bg-[#543821] -mt-1 rounded-b" />
-                </div>
-
-                {/* Cyber Terminal on right */}
-                <div className="absolute bottom-4 right-4 flex flex-col items-center pointer-events-none">
-                  <div className="w-8 h-7 rounded-lg bg-[#0f172a] border-2 border-cyan-400/90 shadow-md flex items-center justify-center">
-                    <Shield className="h-3.5 w-3.5 text-cyan-300" />
+              ) : (
+                <div className="w-full flex flex-col items-center text-center space-y-3 sm:space-y-4 mb-5">
+                  {/* Main Heading & Tagline */}
+                  <div className="space-y-1.5">
+                    <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-white uppercase font-sans">
+                      CYBERMENTOR <span className="text-cyan-400">AI</span>
+                    </h1>
+                    <p className="text-sm sm:text-base font-bold text-amber-400 italic">
+                      "Your decisions leave a trace."
+                    </p>
+                    <p className="text-xs sm:text-sm text-slate-300 max-w-md mx-auto leading-relaxed">
+                      CyberMentor AI is an interactive cybersecurity learning experience where you learn
+                      by making decisions in realistic digital situations.
+                    </p>
                   </div>
-                  <div className="w-2 h-2 bg-[#334155]" />
-                  <div className="w-9 h-1.5 bg-[#1e293b] rounded-t-xs" />
-                </div>
 
-                {/* Hero Avatar In Center */}
-                <div className="relative z-10 flex flex-col items-center mb-2">
-                  <div className="w-10 h-2.5 bg-black/45 rounded-full blur-[1px] translate-y-2" />
-                  <div className="relative w-11 h-13 animate-bounce" style={{ animationDuration: '2.4s' }}>
-                    <svg viewBox="0 0 36 40" className="w-11 h-13 drop-shadow-md" fill="none">
-                      <rect x="10" y="27" width="5" height="7" rx="1" fill="#202938" />
-                      <rect x="9.5" y="33" width="6" height="4.5" rx="1.5" fill="#f8fafc" stroke="#334155" strokeWidth="0.8" />
-                      <rect x="21" y="27" width="5" height="7" rx="1" fill="#202938" />
-                      <rect x="20.5" y="33" width="6" height="4.5" rx="1.5" fill="#f8fafc" stroke="#334155" strokeWidth="0.8" />
-                      <rect x="8.5" y="15" width="19" height="13" rx="2.5" fill="#0369a1" stroke="#075985" strokeWidth="1" />
-                      <line x1="10" y1="16" x2="26" y2="26" stroke="#f59e0b" strokeWidth="1.5" />
-                      <circle cx="13" cy="20" r="1.8" fill="#fbbf24" stroke="#d97706" strokeWidth="0.6" />
-                      <rect x="11" y="7" width="14" height="11" rx="3.5" fill="#fed7aa" />
-                      <path d="M10 9 C10 3, 26 3, 26 9 C26 12, 24 10, 22 10 C20 10, 19 8, 17 10 C15 11, 13 9, 10 9 Z" fill="#78350f" />
-                      <ellipse cx="14" cy="12" rx="1.2" ry="1.8" fill="#1e293b" />
-                      <circle cx="14.3" cy="11.4" r="0.5" fill="#ffffff" />
-                      <ellipse cx="22" cy="12" rx="1.2" ry="1.8" fill="#1e293b" />
-                      <circle cx="22.3" cy="11.4" r="0.5" fill="#ffffff" />
-                      <path d="M16.5 15 Q18 16.2 19.5 15" stroke="#9a3412" strokeWidth="0.8" fill="none" strokeLinecap="round" />
-                    </svg>
+                  {/* Miniature 2D RPG World Diorama */}
+                  <div className="w-full max-w-md">
+                    <RpgDioramaPreview isCompact />
                   </div>
                 </div>
-              </div>
+              )}
 
-              {/* 3 Steps: WHAT WILL I DO HERE? */}
-              <div className="w-full mb-6">
-                <div className="text-[11px] font-mono font-bold text-cyan-400 uppercase tracking-wider mb-2.5">
+              {/* 3 Steps: WHAT WILL I DO HERE? (EXPLORE | DECIDE | LEARN) */}
+              <div className="w-full mb-5 lg:mb-7">
+                <div className="text-[11px] font-mono font-bold text-cyan-400 uppercase tracking-wider mb-2.5 text-center lg:text-left">
                   WHAT WILL YOU DO HERE?
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-left">
-                  <div className="p-3.5 rounded-2xl border border-[#213550] bg-[#111c2c]/90 shadow-sm">
-                    <div className="flex items-center gap-2 mb-1.5">
-                      <div className="p-1.5 rounded-lg bg-cyan-500/20 text-cyan-400">
-                        <Compass className="h-4 w-4" />
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 lg:gap-4 text-left">
+                  <div className="p-3.5 sm:p-4 rounded-2xl border border-[#213550] bg-[#111c2c]/90 shadow-sm flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <div className="p-1.5 rounded-lg bg-cyan-500/20 text-cyan-400">
+                          <Compass className="h-4 w-4" />
+                        </div>
+                        <span className="text-xs font-bold text-white uppercase font-sans">
+                          EXPLORE
+                        </span>
                       </div>
-                      <span className="text-xs font-bold text-white uppercase font-sans">
-                        EXPLORE
-                      </span>
+                      <p className="text-xs text-slate-300 leading-snug">
+                        Explore a digital world and discover different situations.
+                      </p>
                     </div>
-                    <p className="text-xs text-slate-300 leading-snug">
-                      Explore a digital world and discover different situations.
-                    </p>
                   </div>
 
-                  <div className="p-3.5 rounded-2xl border border-[#213550] bg-[#111c2c]/90 shadow-sm">
-                    <div className="flex items-center gap-2 mb-1.5">
-                      <div className="p-1.5 rounded-lg bg-amber-500/20 text-amber-400">
-                        <Scale className="h-4 w-4" />
+                  <div className="p-3.5 sm:p-4 rounded-2xl border border-[#213550] bg-[#111c2c]/90 shadow-sm flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <div className="p-1.5 rounded-lg bg-amber-500/20 text-amber-400">
+                          <Scale className="h-4 w-4" />
+                        </div>
+                        <span className="text-xs font-bold text-white uppercase font-sans">
+                          DECIDE
+                        </span>
                       </div>
-                      <span className="text-xs font-bold text-white uppercase font-sans">
-                        DECIDE
-                      </span>
+                      <p className="text-xs text-slate-300 leading-snug">
+                        Investigate clues, think carefully and choose what you would do.
+                      </p>
                     </div>
-                    <p className="text-xs text-slate-300 leading-snug">
-                      Investigate clues, think carefully and choose what you would do.
-                    </p>
                   </div>
 
-                  <div className="p-3.5 rounded-2xl border border-[#213550] bg-[#111c2c]/90 shadow-sm">
-                    <div className="flex items-center gap-2 mb-1.5">
-                      <div className="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-400">
-                        <BookOpen className="h-4 w-4" />
+                  <div className="p-3.5 sm:p-4 rounded-2xl border border-[#213550] bg-[#111c2c]/90 shadow-sm flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <div className="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-400">
+                          <BookOpen className="h-4 w-4" />
+                        </div>
+                        <span className="text-xs font-bold text-white uppercase font-sans">
+                          LEARN
+                        </span>
                       </div>
-                      <span className="text-xs font-bold text-white uppercase font-sans">
-                        LEARN
-                      </span>
+                      <p className="text-xs text-slate-300 leading-snug">
+                        See the consequences of your decisions and learn from the AI Mentor.
+                      </p>
                     </div>
-                    <p className="text-xs text-slate-300 leading-snug">
-                      See the consequences of your decisions and learn from the AI Mentor.
-                    </p>
                   </div>
                 </div>
 
-                <div className="mt-3 text-xs sm:text-sm font-semibold text-amber-300 font-sans">
+                <div className="mt-3 text-xs sm:text-sm font-semibold text-amber-300 font-sans text-center">
                   "Your journey changes based on the decisions you make."
                 </div>
               </div>
 
-              {/* WHY CYBERMENTOR AI? */}
-              <div className="w-full mb-6 p-4 rounded-2xl border border-sky-800/40 bg-[#0e1929]/80 text-left space-y-1.5">
-                <div className="text-[11px] font-mono font-bold text-sky-400 uppercase tracking-wider">
-                  WHY CYBERMENTOR AI?
+              {/* LOWER BALANCED SECTION (WHY CYBERMENTOR AI? & HOW THE EXPERIENCE WORKS) */}
+              <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-5 mb-6 text-left items-stretch">
+                {/* WHY CYBERMENTOR AI? */}
+                <div className="lg:col-span-5 p-4 sm:p-5 rounded-2xl border border-sky-800/40 bg-[#0e1929]/80 space-y-1.5 flex flex-col justify-center">
+                  <div className="text-[11px] font-mono font-bold text-sky-400 uppercase tracking-wider">
+                    WHY CYBERMENTOR AI?
+                  </div>
+                  <p className="text-xs sm:text-sm font-bold text-slate-200">
+                    "Being comfortable online doesn't always mean being safe online."
+                  </p>
+                  <p className="text-xs text-slate-300 leading-relaxed">
+                    CyberMentor AI helps you practice recognizing threats, thinking before you act,
+                    and making responsible digital decisions.
+                  </p>
                 </div>
-                <p className="text-xs sm:text-sm font-semibold text-slate-200">
-                  "Being comfortable online doesn't always mean being safe online."
-                </p>
-                <p className="text-xs text-slate-300 leading-relaxed">
-                  CyberMentor AI helps you practice recognizing threats, thinking before you act,
-                  and making responsible digital decisions.
-                </p>
+
+                {/* HOW THE EXPERIENCE WORKS (Visual Flow) */}
+                <div className="lg:col-span-7 p-4 sm:p-5 rounded-2xl border border-slate-700/60 bg-[#111c2c]/80 flex flex-col justify-center space-y-2">
+                  <div className="text-[11px] font-mono font-bold text-slate-400 uppercase tracking-wider">
+                    HOW THE EXPERIENCE WORKS
+                  </div>
+                  <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-[10px] sm:text-[11px] font-mono font-bold">
+                    <span className="px-2.5 py-1 rounded-lg bg-cyan-950/70 border border-cyan-700/60 text-cyan-300">
+                      EXPLORE
+                    </span>
+                    <span className="text-slate-500">→</span>
+                    <span className="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-700 text-slate-300">
+                      ENCOUNTER
+                    </span>
+                    <span className="text-slate-500">→</span>
+                    <span className="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-700 text-slate-300">
+                      INVESTIGATE
+                    </span>
+                    <span className="text-slate-500">→</span>
+                    <span className="px-2.5 py-1 rounded-lg bg-amber-950/70 border border-amber-700/60 text-amber-300">
+                      DECIDE
+                    </span>
+                    <span className="text-slate-500">→</span>
+                    <span className="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-700 text-slate-300">
+                      CONSEQUENCE
+                    </span>
+                    <span className="text-slate-500">→</span>
+                    <span className="px-2.5 py-1 rounded-lg bg-purple-950/70 border border-purple-700/60 text-purple-300">
+                      AI DEBRIEF
+                    </span>
+                    <span className="text-slate-500">→</span>
+                    <span className="px-2.5 py-1 rounded-lg bg-emerald-950/70 border border-emerald-700/60 text-emerald-300">
+                      IMPROVE
+                    </span>
+                  </div>
+                </div>
               </div>
 
-              {/* HOW THE EXPERIENCE WORKS (Visual Flow) */}
-              <div className="w-full mb-7">
-                <div className="text-[11px] font-mono font-bold text-slate-400 uppercase tracking-wider mb-2.5">
-                  HOW THE EXPERIENCE WORKS
+              {/* PRIMARY BUTTON ON MOBILE / TABLET PORTRAIT (Full width, touch target >= 48px, pb-safe) */}
+              {!isWideHero && (
+                <div className="w-full pb-safe">
+                  <button
+                    id="start-your-journey-btn-mobile"
+                    onClick={handleStartJourneyClick}
+                    className="w-full group relative flex items-center justify-center gap-3 px-8 py-4 rounded-2xl bg-emerald-500 hover:bg-emerald-400 active:scale-[0.99] text-slate-950 shadow-xl shadow-emerald-500/25 hover:shadow-emerald-500/40 transition-all duration-150 cursor-pointer border border-emerald-300/70 text-base sm:text-lg font-black tracking-wide uppercase font-sans touch-target"
+                  >
+                    <span>START YOUR JOURNEY</span>
+                    <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+                  </button>
                 </div>
-                <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 text-[11px] font-mono font-bold">
-                  <span className="px-2.5 py-1 rounded-lg bg-cyan-950/70 border border-cyan-700/60 text-cyan-300">
-                    EXPLORE
-                  </span>
-                  <span className="text-slate-500">→</span>
-                  <span className="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-700 text-slate-300">
-                    ENCOUNTER
-                  </span>
-                  <span className="text-slate-500">→</span>
-                  <span className="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-700 text-slate-300">
-                    INVESTIGATE
-                  </span>
-                  <span className="text-slate-500">→</span>
-                  <span className="px-2.5 py-1 rounded-lg bg-amber-950/70 border border-amber-700/60 text-amber-300">
-                    DECIDE
-                  </span>
-                  <span className="text-slate-500">→</span>
-                  <span className="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-700 text-slate-300">
-                    CONSEQUENCE
-                  </span>
-                  <span className="text-slate-500">→</span>
-                  <span className="px-2.5 py-1 rounded-lg bg-purple-950/70 border border-purple-700/60 text-purple-300">
-                    AI DEBRIEF
-                  </span>
-                  <span className="text-slate-500">→</span>
-                  <span className="px-2.5 py-1 rounded-lg bg-emerald-950/70 border border-emerald-700/60 text-emerald-300">
-                    IMPROVE
-                  </span>
-                </div>
-              </div>
-
-              {/* PRIMARY BUTTON: ONE OBVIOUS ACTION */}
-              <div className="w-full">
-                <button
-                  id="start-your-journey-btn"
-                  onClick={handleStartJourneyClick}
-                  className="w-full group relative flex items-center justify-center gap-3 px-8 py-4 sm:py-4.5 rounded-2xl bg-emerald-500 hover:bg-emerald-400 active:scale-[0.99] text-slate-950 shadow-xl shadow-emerald-500/25 hover:shadow-emerald-500/40 transition-all duration-150 cursor-pointer border border-emerald-300/70 text-base sm:text-lg font-black tracking-wide uppercase font-sans"
-                >
-                  <span>START YOUR JOURNEY</span>
-                  <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
-                </button>
-              </div>
+              )}
             </div>
           )}
 

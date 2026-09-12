@@ -15,6 +15,16 @@
     --warn-amber: #d29922;
     --danger-red: #f85149;
     --success-green: #3fb950;
+    --sat: env(safe-area-inset-top, 0px);
+    --sar: env(safe-area-inset-right, 0px);
+    --sab: env(safe-area-inset-bottom, 0px);
+    --sal: env(safe-area-inset-left, 0px);
+  }
+
+  html, body {
+    overflow-x: hidden;
+    width: 100%;
+    max-width: 100%;
   }
 
   body {
@@ -24,6 +34,7 @@
     margin: 0;
     padding: 0;
     min-height: 100vh;
+    min-height: 100dvh;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     selection-background-color: #1f3554;
@@ -133,4 +144,26 @@
   transform-origin: top center;
   animation: arm-swing-right 0.3s ease-in-out infinite;
 }
+
+/* Device safe area utilities */
+.pt-safe {
+  padding-top: max(1rem, env(safe-area-inset-top, 0px));
+}
+.pb-safe {
+  padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px));
+}
+.pl-safe {
+  padding-left: max(1rem, env(safe-area-inset-left, 0px));
+}
+.pr-safe {
+  padding-right: max(1rem, env(safe-area-inset-right, 0px));
+}
+
+/* Touch target ergonomics */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+  touch-action: manipulation;
+}
+
 
