@@ -4,6 +4,8 @@ import {
   LocationId,
   EvidenceItem,
   TrustChangeRecord,
+  Achievement,
+  CyberSkillProfile,
 } from './types';
 import { WORLD_LOCATIONS } from './data/locations';
 import { MISSIONS } from './data/missions';
@@ -22,6 +24,9 @@ import { EvidenceNotebook } from './components/EvidenceNotebook';
 import { AbilityPanel } from './components/AbilityPanel';
 import { ProfileModal } from './components/ProfileModal';
 import { HowItWorksModal } from './components/HowItWorksModal';
+import { AchievementToast } from './components/AchievementToast';
+import { SkillCheckModal } from './components/SkillCheckModal';
+import { DailyChallengeModal } from './components/DailyChallengeModal';
 import { ScenarioOpsView } from './components/scenarios/ScenarioOpsView';
 import {
   setAudioMuted,
@@ -57,6 +62,9 @@ export default function App() {
   const [activeMissionId, setActiveMissionId] = useState<string>('mission-01-email');
   const [soundMuted, setSoundMuted] = useState<boolean>(false);
   const [isHelpOpen, setIsHelpOpen] = useState<boolean>(false);
+  const [activeAchievementToast, setActiveAchievementToast] = useState<Achievement | null>(null);
+  const [isSkillCheckOpen, setIsSkillCheckOpen] = useState<boolean>(false);
+  const [isDailyChallengeOpen, setIsDailyChallengeOpen] = useState<boolean>(false);
 
   // Synchronize URL hash when tab changes
   useEffect(() => {
@@ -70,6 +78,33 @@ export default function App() {
       }
     } catch {}
   }, [currentTab]);
+
+  // Listen for browser back / forward navigation
+  useEffect(() => {
+    const handleHashChange = () => {
+      try {
+        const hash = window.location.hash.replace('#', '');
+        const validTabs: Array<'home' | 'world' | 'location' | 'mission' | 'abilities' | 'evidence' | 'profile' | 'scenario-ops'> = [
+          'home',
+          'world',
+          'location',
+          'mission',
+          'abilities',
+          'evidence',
+          'profile',
+          'scenario-ops',
+        ];
+        if (validTabs.includes(hash as any)) {
+          setCurrentTab(hash as any);
+        } else if (!hash) {
+          setCurrentTab('home');
+        }
+      } catch {}
+    };
+
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
 
   // Initialize and synchronize with backend server
   useEffect(() => {
@@ -189,6 +224,30 @@ export default function App() {
     });
   };
 
+  const handleUnlockAchievement = (achId: string) => {
+    setPlayer((prev) => {
+      const target = prev.achievements.find((a) => a.id === achId);
+      if (!target || target.unlocked) return prev;
+      const updatedAchievements = prev.achievements.map((a) =>
+        a.id === achId ? { ...a, unlocked: true } : a
+      );
+      setActiveAchievementToast({ ...target, unlocked: true });
+      return {
+        ...prev,
+        achievements: updatedAchievements,
+      };
+    });
+  };
+
+  const handleCompleteSkillCheck = (profile: CyberSkillProfile) => {
+    setPlayer((prev) => ({
+      ...prev,
+      skillCheckCompleted: true,
+      skillProfile: profile,
+    }));
+    setIsSkillCheckOpen(false);
+  };
+
   const handleResetProgress = () => {
     // Reset backend
     api.resetPlayerState().catch(() => {});
@@ -235,6 +294,8 @@ export default function App() {
           soundMuted={soundMuted}
           onToggleSound={handleToggleSound}
           onOpenHelp={() => setIsHelpOpen(true)}
+          onOpenSkillCheck={() => setIsSkillCheckOpen(true)}
+          onOpenDailyChallenge={() => setIsDailyChallengeOpen(true)}
           onResetProgress={handleResetProgress}
         />
       )}
@@ -251,14 +312,18 @@ export default function App() {
             }}
             onOpenScenarioOps={() => setCurrentTab('scenario-ops')}
             onOpenHowItWorks={() => setIsHelpOpen(true)}
+            onOpenSkillCheck={() => setIsSkillCheckOpen(true)}
             onNavigate={(tab) => setCurrentTab(tab)}
             soundMuted={soundMuted}
             onToggleSound={handleToggleSound}
+            onCompleteSkillCheck={handleCompleteSkillCheck}
+            onResetProgress={handleResetProgress}
           />
         )}
 
         {currentTab === 'scenario-ops' && (
           <ScenarioOpsView
+            player={player}
             onExitToHome={() => setCurrentTab('home')}
             onEnterRPG={() => handleSelectLocation('campus')}
           />
@@ -283,8 +348,9 @@ export default function App() {
           />
         )}
 
-        {currentTab === 'mission' && (
+        {currentTab === 'mission' && currentMission && (
           <MissionWorkspace
+            key={currentMission.id}
             mission={currentMission}
             player={player}
             onExitMission={() => {
@@ -292,9 +358,25 @@ export default function App() {
             }}
             onRecordTrustChange={handleRecordTrustChange}
             onUnlockAbility={handleUnlockAbility}
+            onUnlockAchievement={handleUnlockAchievement}
             onCompleteMission={handleCompleteMission}
             onAddEvidence={handleAddEvidence}
             onProceedNextMission={(nextId) => {
+              const nextMission = MISSIONS[nextId];
+              if (nextMission?.locationId) {
+                setSelectedLocationId(nextMission.locationId);
+                setPlayer((prev) => ({ ...prev, currentLocationId: nextMission.locationId }));
+              }
+              // Sync area progression in 2D world
+              if (nextId === 'mission-01-email') {
+                localStorage.setItem('cybermentor_active_campus_area', 'campus-library');
+              } else if (nextId === 'mission-02-usb') {
+                localStorage.setItem('cybermentor_active_campus_area', 'campus-engineering-lab');
+              } else if (nextId === 'mission-03-wifi') {
+                localStorage.setItem('cybermentor_active_campus_area', 'campus-student-union');
+              } else if (nextId === 'mission-04-qr-scam') {
+                localStorage.setItem('cybermentor_active_campus_area', 'campus-secops-desk');
+              }
               setActiveMissionId(nextId);
               setCurrentTab('mission');
             }}
@@ -331,6 +413,31 @@ export default function App() {
           }}
         />
       )}
+
+      {/* Initial / Retake Diagnostic Skill Check Modal */}
+      {isSkillCheckOpen && (
+        <SkillCheckModal
+          onComplete={handleCompleteSkillCheck}
+          onClose={() => setIsSkillCheckOpen(false)}
+          initialName={player.name}
+        />
+      )}
+
+      {/* Daily Cybersecurity Briefing & Challenge Modal */}
+      {isDailyChallengeOpen && (
+        <DailyChallengeModal
+          onClose={() => setIsDailyChallengeOpen(false)}
+          onRecordDecision={(points, reason) => {
+            handleRecordTrustChange(points, reason);
+          }}
+        />
+      )}
+
+      {/* Real-time Achievement Toast Notification */}
+      <AchievementToast
+        achievement={activeAchievementToast}
+        onDismiss={() => setActiveAchievementToast(null)}
+      />
     </div>
   );
 }

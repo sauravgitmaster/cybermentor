@@ -47,30 +47,38 @@ mentorRouter.post("/analyze", async (req, res) => {
     trustChange,
     playerTrust,
     playerLevel,
+    skillProfile,
+    supportingEvidenceSelected = [],
+    evidenceBonusAwarded = false,
   } = req.body;
 
   const client = getGeminiClient();
 
   if (client) {
-    const prompt = `You are CyberMentor AI, a calm, analytical, and supportive cybersecurity mentor guiding a student operative through a digital survival training simulation.
+    const prompt = `You are CyberMentor AI, a calm, analytical, and supportive cybersecurity mentor guiding a student operative through an interactive RPG training simulation.
 
-Current Context:
-- Location: ${location || "Campus"}
+Current Operational Context:
+- Sector / Location: ${location || "Campus"}
 - Mission: ${missionTitle || "The Incident"} (${missionId})
-- Player Digital Trust: ${playerTrust}/100 (Trust Delta: ${trustChange > 0 ? "+" + trustChange : trustChange})
-- Player Level: ${playerLevel || 1}
-- Evidence Uncovered: ${evidenceCollected.length > 0 ? evidenceCollected.join(", ") : "None documented"}
-- Decision Made: "${chosenAction?.label || "Unknown decision"}" (Outcome: ${isCorrect ? "Successful Defense" : "Security Compromise/Near Miss"})
+- Player Digital Trust: ${playerTrust}/100 (Decision Delta: ${trustChange > 0 ? "+" + trustChange : trustChange})
+- Player Operative Level: ${playerLevel || 1}
+- Evidence Uncovered in Investigation: ${evidenceCollected.length > 0 ? evidenceCollected.join(", ") : "None documented"}
+- Evidence Specifically Cited to Support Decision: ${supportingEvidenceSelected.length > 0 ? supportingEvidenceSelected.join(", ") : "No supporting clues cited"}
+- Evidence Reasoning Bonus: ${evidenceBonusAwarded ? "Yes (+5 Trust bonus awarded for forensic corroboration)" : "None"}
+- Operative Skill Profile (Weaknesses/Focus Areas): ${skillProfile?.demonstratedWeaknesses?.join("; ") || "General Vigilance"}
+- Operative Strengths: ${skillProfile?.demonstratedStrengths?.join("; ") || "Observant"}
+- Decision Made: "${chosenAction?.label || "Unknown decision"}" (Outcome: ${isCorrect ? "Defensive Success" : "Perimeter Compromise"})
 - Player Rationale / Action Description: "${chosenAction?.description || ""}"
 
-Respond with concise, high-impact mentor guidance in valid JSON format only.
+Respond with concise, high-impact mentor guidance in valid JSON format only. Notice cross-mission patterns (e.g. noticing improvements in link inspection, but warning if they still fall for emotional urgency).
 Output JSON schema:
 {
   "evaluation": "2-3 sentences evaluating the decision based on evidence collected and investigative depth.",
   "securityPrinciple": "The fundamental security rule or mental model at play (e.g., 'Zero Trust in External Communication', 'Executable File Masquerading').",
   "mentorVoice": "A direct, calm quote from the mentor reacting to the player's judgment.",
+  "personalizedPattern": "1-2 sentences recognizing their cross-mission habits or behavioral pattern (e.g., 'You are consistently checking domains, but be mindful of urgency tricks. Next time, verify via official phone or app.').",
   "realWorldDefense": "One concrete practical habit the player should use in everyday digital life.",
-  "adaptiveRecommendation": "What the player should investigate next in the Cyber World."
+  "adaptiveRecommendation": "What the player should practice or investigate next in the Cyber World."
 }`;
 
     const candidateModels = ["gemini-3.8-flash", "gemini-3.6-flash"];
@@ -107,12 +115,19 @@ Output JSON schema:
     }
   }
 
-  // Deterministic fallback
+  // Deterministic fallback with personalized cross-mission pattern recognition
   let fallbackEvaluation = "You investigated the scenario and executed a decisive operational choice.";
   let fallbackPrinciple = "Defensive Cyber Hygiene";
   let fallbackVoice = "Every keystroke and click leaves a digital footprint. Stay observant.";
   let fallbackDefense = "Verify the authenticity of communications through independent, secondary channels.";
   let fallbackRecommendation = "Proceed to the next perimeter scan.";
+  let fallbackPattern = "You demonstrated evidence-based reasoning. Continue applying this forensic pause before every click.";
+
+  if (supportingEvidenceSelected && supportingEvidenceSelected.length > 0) {
+    fallbackPattern = `You cited concrete evidence (${supportingEvidenceSelected.length} verified indicator${supportingEvidenceSelected.length > 1 ? 's' : ''}) to back your choice. Relying on technical proof rather than gut feeling is the hallmark of an effective cyber investigator.`;
+  } else if (!isCorrect) {
+    fallbackPattern = "You've correctly explored the scenario, but responded to artificial urgency. Remember: panic is an attacker's lever to rush your decisions. Slow down and check the technical clues.";
+  }
 
   if (missionId === "mission-01-email") {
     if (isCorrect) {
@@ -210,6 +225,7 @@ Output JSON schema:
     evaluation: fallbackEvaluation,
     securityPrinciple: fallbackPrinciple,
     mentorVoice: fallbackVoice,
+    personalizedPattern: fallbackPattern,
     realWorldDefense: fallbackDefense,
     adaptiveRecommendation: fallbackRecommendation,
   });

@@ -42,18 +42,14 @@ export const InteractiveStation: React.FC<StationProps> = ({
         transform: 'translate(-50%, -70%)',
       }}
     >
-      {/* Overhead RPG Prompt Tag */}
-      <div className="absolute -top-7 left-1/2 -translate-x-1/2 whitespace-nowrap pointer-events-none">
-        <span
-          className={`px-2 py-0.5 text-[9px] font-mono font-bold tracking-wider rounded-full shadow-md border transition-colors ${
-            isNearPlayer
-              ? 'text-slate-950 bg-amber-400 border-amber-300 ring-2 ring-amber-400/40'
-              : 'text-slate-200 bg-[#0f172a]/90 border-[#334155]'
-          }`}
-        >
-          {name}
-        </span>
-      </div>
+      {/* Overhead RPG Prompt Tag - Only shown when player approaches */}
+      {isNearPlayer && (
+        <div className="absolute -top-7 left-1/2 -translate-x-1/2 whitespace-nowrap pointer-events-none animate-in fade-in duration-150">
+          <span className="px-2 py-0.5 text-[9px] font-mono font-bold tracking-wider rounded-full shadow-md border text-slate-950 bg-amber-400 border-amber-300 ring-2 ring-amber-400/40">
+            {name}
+          </span>
+        </div>
+      )}
 
       {/* Ground Shadow */}
       <div className="absolute left-1/2 top-[30px] -translate-x-1/2 w-9 h-3 bg-black/40 rounded-full blur-[1px]" />
@@ -543,6 +539,48 @@ export const EnvironmentalProp: React.FC<{ prop: WorldProp }> = ({ prop }) => {
             <div className="w-1 h-5 bg-slate-600" />
           </div>
           <div className="w-11 h-1 bg-black/30 rounded-full blur-[1px]" />
+        </div>
+      )}
+
+      {/* 8. FLOWERBED PLANTER */}
+      {type === 'planter' && (
+        <div className="relative flex flex-col items-center">
+          <div className="w-12 h-5 bg-[#78350f] border-2 border-[#451a03] rounded-md shadow-md flex items-center justify-around px-1">
+            <span className="w-2 h-2 rounded-full bg-rose-500 shadow-sm" />
+            <span className="w-2 h-2 rounded-full bg-amber-400 shadow-sm" />
+            <span className="w-2 h-2 rounded-full bg-sky-400 shadow-sm" />
+            <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-sm" />
+          </div>
+          <div className="w-11 h-1 bg-black/30 rounded-full blur-[1px]" />
+        </div>
+      )}
+
+      {/* 9. DESK / LAB RIG */}
+      {type === 'desk' && (
+        <div className="relative flex flex-col items-center">
+          <div className="w-14 h-7 bg-[#334155] border-2 border-[#1e293b] rounded shadow-md flex items-center justify-between px-1.5">
+            <div className="w-4 h-3 bg-cyan-900 border border-cyan-500/70 rounded-xs" />
+            <div className="w-3 h-2 bg-slate-700 rounded-xs" />
+          </div>
+          <div className="flex justify-between w-12 px-1">
+            <div className="w-1 h-3 bg-[#1e293b]" />
+            <div className="w-1 h-3 bg-[#1e293b]" />
+          </div>
+          <div className="w-13 h-1 bg-black/35 rounded-full blur-[1px]" />
+        </div>
+      )}
+
+      {/* 10. CAMPUS TERMINAL */}
+      {type === 'terminal' && (
+        <div className="relative flex flex-col items-center">
+          <div className="w-8 h-8 rounded bg-[#0f172a] border-2 border-[#38bdf8] shadow-md flex flex-col items-center justify-center p-1">
+            <div className="w-5 h-3 bg-sky-500/30 rounded-xs border border-sky-400/50 flex items-center justify-center">
+              <div className="w-1 h-1 rounded-full bg-emerald-400 animate-ping" />
+            </div>
+          </div>
+          <div className="w-3 h-3 bg-[#334155]" />
+          <div className="w-6 h-1.5 bg-[#1e293b] rounded-t-sm" />
+          <div className="w-7 h-1 bg-black/35 rounded-full blur-[1px]" />
         </div>
       )}
     </div>

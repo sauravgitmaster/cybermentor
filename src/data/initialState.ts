@@ -96,6 +96,13 @@ export const INITIAL_ACHIEVEMENTS: Achievement[] = [
     unlocked: false,
   },
   {
+    id: 'ach-phish-finder',
+    title: 'Phish Finder',
+    description: 'Successfully identified suspicious phishing and domain deception attempts.',
+    category: 'Vigilance',
+    unlocked: false,
+  },
+  {
     id: 'ach-phish-disarmed',
     title: 'Phish Disarmed',
     description: 'Identified a typosquatted domain and prevented credential harvest.',
@@ -103,10 +110,38 @@ export const INITIAL_ACHIEVEMENTS: Achievement[] = [
     unlocked: false,
   },
   {
+    id: 'ach-password-guardian',
+    title: 'Password Guardian',
+    description: 'Made robust credential and authentication defense decisions.',
+    category: 'Containment',
+    unlocked: false,
+  },
+  {
+    id: 'ach-qr-detective',
+    title: 'QR Detective',
+    description: 'Successfully investigated and exposed a physical QR-based scam.',
+    category: 'Forensics',
+    unlocked: false,
+  },
+  {
     id: 'ach-evidence-collector',
     title: 'Forensic Collector',
-    description: 'Logged 3 distinct indicators of compromise in the Evidence Notebook.',
+    description: 'Logged distinct indicators of compromise in the Evidence Notebook.',
     category: 'Forensics',
+    unlocked: false,
+  },
+  {
+    id: 'ach-evidence-expert',
+    title: 'Evidence Expert',
+    description: 'Corroborated decisions with verified technical evidence in investigations.',
+    category: 'Mastery',
+    unlocked: false,
+  },
+  {
+    id: 'ach-think-before-click',
+    title: 'Think Before You Click',
+    description: 'Completed multiple cyber situations without taking reckless or hasty actions.',
+    category: 'Vigilance',
     unlocked: false,
   },
   {
@@ -114,6 +149,13 @@ export const INITIAL_ACHIEVEMENTS: Achievement[] = [
     title: 'Perimeter Sentry',
     description: 'Neutralized a BadUSB hardware attack without plugging it into a live network.',
     category: 'Containment',
+    unlocked: false,
+  },
+  {
+    id: 'ach-digital-defender',
+    title: 'Digital Defender',
+    description: 'Attained a Digital Trust rating above 50/100 through rigorous defense.',
+    category: 'Mastery',
     unlocked: false,
   },
   {
@@ -125,10 +167,91 @@ export const INITIAL_ACHIEVEMENTS: Achievement[] = [
   },
 ];
 
+export const DEFAULT_SKILL_PROFILE = {
+  phishing: 50,
+  privacy: 50,
+  deviceSecurity: 50,
+  socialEngineering: 50,
+  overallScore: 50,
+  demonstratedStrengths: ['Curiosity', 'Eagerness to Learn'],
+  demonstratedWeaknesses: ['Initial Assessment Pending'],
+};
+
+export const LEVEL_TITLES: Record<number, string> = {
+  1: 'Digital Beginner',
+  2: 'Cyber Explorer',
+  3: 'Threat Spotter',
+  4: 'Cyber Investigator',
+  5: 'Digital Defender',
+  6: 'Cyber Guardian',
+};
+
+export function computePlayerLevel(
+  completedMissionsCount: number,
+  digitalTrust: number,
+  evidenceCount: number = 0
+): { level: number; title: string } {
+  let level = 1;
+  if (digitalTrust >= 85 || (completedMissionsCount >= 4 && digitalTrust >= 70)) {
+    level = 6;
+  } else if (digitalTrust >= 65 || completedMissionsCount >= 4) {
+    level = 5;
+  } else if (digitalTrust >= 45 || completedMissionsCount >= 3) {
+    level = 4;
+  } else if (digitalTrust >= 25 || completedMissionsCount >= 2) {
+    level = 3;
+  } else if (digitalTrust >= 10 || completedMissionsCount >= 1 || evidenceCount >= 1) {
+    level = 2;
+  }
+  return {
+    level,
+    title: LEVEL_TITLES[level] || 'Cyber Explorer',
+  };
+}
+
+export const MILESTONE_CERTIFICATES = [
+  {
+    id: 'cert-cyber-safety-explorer',
+    title: 'CYBER SAFETY EXPLORER',
+    field: 'Foundational Threat Recognition & Digital Hygiene',
+    milestoneTrust: 15,
+    minLevel: 2,
+    description:
+      'Awarded for establishing verified cyber awareness and completing initial perimeter investigations.',
+  },
+  {
+    id: 'cert-threat-investigator',
+    title: 'CYBER INVESTIGATOR',
+    field: 'Evidence-Based Forensic Investigation & Threat Isolation',
+    milestoneTrust: 40,
+    minLevel: 3,
+    description:
+      'Awarded for demonstrating forensic analysis, isolating rogue devices, and documenting indicators of compromise.',
+  },
+  {
+    id: 'cert-digital-defender',
+    title: 'DIGITAL DEFENDER',
+    field: 'Advanced Perimeter Containment & Threat Neutralization',
+    milestoneTrust: 65,
+    minLevel: 4,
+    description:
+      'Awarded for defending against network spoofing, malicious links, and physical media exploitation.',
+  },
+  {
+    id: 'cert-trust-guardian',
+    title: 'TRUST GUARDIAN',
+    field: 'Zero-Trust Protocol Leadership & Comprehensive Resilience',
+    milestoneTrust: 85,
+    minLevel: 5,
+    description:
+      'Highest honor awarded for exemplary digital trust, thorough verification, and zero reckless clicks across sectors.',
+  },
+];
+
 export const DEFAULT_PLAYER_STATE: PlayerState = {
   name: 'Saurav',
   level: 1,
-  title: 'Cyber Explorer',
+  title: 'Digital Beginner',
   digitalTrust: 0, // MUST start at 0
   abilities: INITIAL_ABILITIES,
   evidence: [],
@@ -138,6 +261,8 @@ export const DEFAULT_PLAYER_STATE: PlayerState = {
   trustHistory: [],
   achievements: INITIAL_ACHIEVEMENTS,
   certificates: [],
+  skillProfile: DEFAULT_SKILL_PROFILE,
+  skillCheckCompleted: false,
 };
 
 const STORAGE_KEY = 'cybermentor_player_state_v1';
@@ -152,6 +277,31 @@ export function loadSavedPlayerState(): PlayerState {
     if (typeof parsed.digitalTrust !== 'number') {
       parsed.digitalTrust = 0;
     }
+    // Ensure skillProfile exists
+    if (!parsed.skillProfile) {
+      parsed.skillProfile = DEFAULT_SKILL_PROFILE;
+    }
+    // Ensure title and level are refreshed
+    const calculated = computePlayerLevel(
+      (parsed.completedMissions || []).length,
+      parsed.digitalTrust,
+      (parsed.evidence || []).length
+    );
+    parsed.level = calculated.level;
+    parsed.title = calculated.title;
+
+    // Merge any missing achievements
+    if (Array.isArray(parsed.achievements)) {
+      const existingIds = new Set(parsed.achievements.map((a: any) => a.id));
+      INITIAL_ACHIEVEMENTS.forEach((initAch) => {
+        if (!existingIds.has(initAch.id)) {
+          parsed.achievements.push(initAch);
+        }
+      });
+    } else {
+      parsed.achievements = INITIAL_ACHIEVEMENTS;
+    }
+
     return parsed;
   } catch {
     return DEFAULT_PLAYER_STATE;

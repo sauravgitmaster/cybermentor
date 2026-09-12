@@ -58,68 +58,13 @@ export const LocationView: React.FC<LocationViewProps> = ({
   };
 
   return (
-    <div id="location-hub-view" className="mx-auto max-w-6xl px-4 py-4 sm:px-6 space-y-4">
-      {/* Top Breadcrumb & View Toggle Navigation */}
-      <div className="flex flex-wrap items-center justify-between border-b border-[#21262d] pb-2.5 gap-2">
-        <button
-          id="location-back-to-world-btn"
-          onClick={() => {
-            playClickSound();
-            onBackToWorld();
-          }}
-          className="flex items-center gap-2 text-xs font-mono text-slate-400 hover:text-cyan-400 transition-colors"
-        >
-          <ArrowLeft className="h-3.5 w-3.5" />
-          <span>[TOPOLOGY]</span>
-          <span className="text-slate-400">/</span>
-          <span className="text-slate-200 uppercase">{location.name}</span>
-        </button>
-
-        <div className="flex items-center gap-3 text-xs font-mono">
-          {/* Toggle between 2D World Exploration and Dossier Cards */}
-          <div className="flex items-center border border-[#30363d] bg-[#0d1117] p-0.5">
-            <button
-              id="viewmode-rpg-btn"
-              onClick={() => {
-                playClickSound();
-                setViewMode('rpg');
-              }}
-              className={`flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-mono transition-colors uppercase ${
-                viewMode === 'rpg'
-                  ? 'bg-cyan-500 text-slate-950 font-bold'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <Compass className="h-3 w-3" />
-              <span>2D SECTOR WORLD</span>
-            </button>
-            <button
-              id="viewmode-dossier-btn"
-              onClick={() => {
-                playClickSound();
-                setViewMode('dossier');
-              }}
-              className={`flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-mono transition-colors uppercase ${
-                viewMode === 'dossier'
-                  ? 'bg-cyan-500 text-slate-950 font-bold'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <Grid className="h-3 w-3" />
-              <span>DOSSIER CARDS</span>
-            </button>
-          </div>
-
-          <div className="hidden sm:flex items-center gap-1.5 text-slate-400">
-            <span>TRUST:</span>
-            <span className="text-cyan-400 font-bold">{player.digitalTrust}/100</span>
-          </div>
-        </div>
-      </div>
-
-      {/* VIEW MODE 1: 2D RPG EXPLORATION LAYER */}
+    <div
+      id="location-hub-view"
+      className="w-full min-h-[calc(100vh-62px)] flex flex-col items-center justify-center py-4 px-3 sm:py-8 sm:px-6 bg-[#090e17] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#132034] via-[#0b121e] to-[#070a10]"
+    >
+      {/* VIEW MODE 1: 2D RPG EXPLORATION LAYER (Spacious central game screen) */}
       {viewMode === 'rpg' ? (
-        <div className="space-y-3 animate-in fade-in duration-200">
+        <div className="w-full max-w-5xl flex flex-col items-center animate-in fade-in duration-300">
           {/* Explorable 2D RPG World Scene */}
           <WorldScene
             location={location}
@@ -132,19 +77,32 @@ export const LocationView: React.FC<LocationViewProps> = ({
         </div>
       ) : (
         /* VIEW MODE 2: CLASSIC DOSSIER LIST */
-        <div className="space-y-4 animate-in fade-in duration-200">
+        <div className="w-full max-w-5xl space-y-4 animate-in fade-in duration-200">
+          <div className="flex items-center justify-between pb-2">
+            <button
+              onClick={() => {
+                playClickSound();
+                setViewMode('rpg');
+              }}
+              className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl border border-[#3b5175] bg-[#16233b] hover:bg-[#20324f] text-slate-200 text-xs font-semibold cursor-pointer transition-colors"
+            >
+              <Compass className="h-4 w-4 text-amber-400" />
+              <span>RETURN TO 2D RPG WORLD</span>
+            </button>
+          </div>
+
           {/* Location Technical Banner */}
-          <div className="border border-[#21262d] bg-[#0d1117] p-4 sm:p-5">
+          <div className="rounded-2xl border-2 border-[#2b4063] bg-[#0d1624] p-5 shadow-xl">
             <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
-              <div className="flex items-start gap-3.5">
-                <div className="p-2 border border-[#30363d] bg-[#161b22] text-cyan-400">
+              <div className="flex items-start gap-4">
+                <div className="p-2.5 rounded-xl border border-[#304566] bg-[#17253b] text-cyan-400">
                   {getLocationIcon(location.id)}
                 </div>
                 <div>
                   <div className="text-[10px] font-mono text-cyan-400 uppercase tracking-wider">
                     SECTOR DISPATCH // {location.id.toUpperCase()}
                   </div>
-                  <h1 className="text-lg sm:text-xl font-mono font-bold text-slate-100 uppercase mt-0.5">
+                  <h1 className="text-xl font-mono font-bold text-slate-100 uppercase mt-0.5">
                     {location.name}
                   </h1>
                   <p className="text-xs text-slate-300 font-sans mt-1 max-w-2xl leading-relaxed">
@@ -155,8 +113,8 @@ export const LocationView: React.FC<LocationViewProps> = ({
 
               <div className="flex flex-row md:flex-col items-baseline md:items-end justify-between border-t md:border-t-0 border-[#21262d] pt-2 md:pt-0 gap-1 font-mono">
                 <span className="text-[10px] text-slate-400 uppercase">CURRENT TRUST</span>
-                <span className="text-base font-bold text-cyan-400">
-                  {player.digitalTrust.toString().padStart(3, '0')} / 100
+                <span className="text-lg font-bold text-amber-300">
+                  🛡️ {player.digitalTrust.toString().padStart(3, '0')} / 100
                 </span>
               </div>
             </div>
@@ -184,17 +142,17 @@ export const LocationView: React.FC<LocationViewProps> = ({
                   <div
                     key={mission.id}
                     id={`mission-card-${mission.id}`}
-                    className={`border flex flex-col justify-between p-4 transition-colors font-mono ${
+                    className={`rounded-xl border-2 flex flex-col justify-between p-4 transition-colors font-mono shadow-md ${
                       isCompleted
-                        ? 'border-emerald-900/60 bg-[#0c1315]'
+                        ? 'border-emerald-900/60 bg-[#0c1619]'
                         : isAccessible
-                        ? 'border-[#30363d] bg-[#0d1117] hover:border-cyan-500'
-                        : 'border-[#21262d] bg-[#0a0c10] opacity-50'
+                        ? 'border-[#304566] bg-[#0d1726] hover:border-amber-400'
+                        : 'border-[#1e2c40] bg-[#0a101a] opacity-50'
                     }`}
                   >
                     <div>
                       {/* Mission Code & Status */}
-                      <div className="flex items-center justify-between border-b border-[#21262d] pb-2 mb-3">
+                      <div className="flex items-center justify-between border-b border-[#20324d] pb-2 mb-3">
                         <span className="text-xs font-bold text-cyan-400">
                           {mission.code}
                         </span>

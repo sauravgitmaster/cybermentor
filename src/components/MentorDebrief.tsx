@@ -26,6 +26,7 @@ interface MentorDebriefProps {
   mentorFeedback: MentorAnalysisResponse | null;
   isLoadingFeedback: boolean;
   unlockedAbility: { name: string; description: string; command: string } | null;
+  nextMissionCode?: string;
   onReturnToWorld: () => void;
   onProceedNextMission?: () => void;
 }
@@ -37,6 +38,7 @@ export const MentorDebrief: React.FC<MentorDebriefProps> = ({
   mentorFeedback,
   isLoadingFeedback,
   unlockedAbility,
+  nextMissionCode,
   onReturnToWorld,
   onProceedNextMission,
 }) => {
@@ -155,6 +157,19 @@ export const MentorDebrief: React.FC<MentorDebriefProps> = ({
               </p>
             </div>
 
+            {/* Personalized Cross-Mission Habit & Pattern Recognition */}
+            {mentorFeedback.personalizedPattern && (
+              <div className="rounded-xl border border-amber-500/40 bg-amber-950/20 p-3.5 space-y-1">
+                <div className="text-[10px] font-mono font-bold uppercase text-amber-300 tracking-wider flex items-center gap-1.5">
+                  <Cpu className="h-3.5 w-3.5 text-amber-400" />
+                  <span>PERSONALIZED PATTERN RECOGNITION</span>
+                </div>
+                <p className="text-xs text-slate-200 font-sans leading-relaxed">
+                  {mentorFeedback.personalizedPattern}
+                </p>
+              </div>
+            )}
+
             {/* Core Security Mental Model */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
               <div className="rounded border border-[#1d2738] bg-[#090c12] p-3">
@@ -247,22 +262,38 @@ export const MentorDebrief: React.FC<MentorDebriefProps> = ({
             playClickSound();
             onReturnToWorld();
           }}
-          className="w-full sm:w-auto rounded border border-[#232b3c] bg-[#121622] hover:bg-[#181e2e] px-5 py-2.5 text-xs font-semibold text-slate-300 transition-colors"
+          className="w-full sm:w-auto rounded border border-[#232b3c] bg-[#121622] hover:bg-[#181e2e] px-5 py-2.5 text-xs font-semibold text-slate-300 transition-colors cursor-pointer"
         >
           RETURN TO WORLD MAP
         </button>
 
-        {onProceedNextMission && (
+        {onProceedNextMission ? (
           <button
             id="debrief-next-mission-btn"
             onClick={() => {
               playClickSound();
               onProceedNextMission();
             }}
-            className="w-full sm:w-auto flex items-center justify-center gap-2 rounded bg-cyan-500 hover:bg-cyan-400 text-slate-950 px-6 py-2.5 text-xs font-bold shadow transition-all"
+            className="w-full sm:w-auto flex items-center justify-center gap-2 rounded bg-amber-400 hover:bg-amber-300 active:scale-95 text-slate-950 px-6 py-2.5 text-xs font-black shadow-lg transition-all cursor-pointer"
           >
-            <span>PROCEED TO NEXT ENCOUNTER</span>
-            <ArrowRight className="h-4 w-4" />
+            <span>
+              {nextMissionCode
+                ? `PROCEED TO NEXT ENCOUNTER (${nextMissionCode})`
+                : 'PROCEED TO NEXT ENCOUNTER'}
+            </span>
+            <ArrowRight className="h-4 w-4 stroke-[3]" />
+          </button>
+        ) : (
+          <button
+            id="debrief-all-complete-btn"
+            onClick={() => {
+              playClickSound();
+              onReturnToWorld();
+            }}
+            className="w-full sm:w-auto flex items-center justify-center gap-2 rounded bg-emerald-400 hover:bg-emerald-300 active:scale-95 text-slate-950 px-6 py-2.5 text-xs font-black shadow-lg transition-all cursor-pointer"
+          >
+            <span>ALL ENCOUNTERS RESOLVED • RETURN TO WORLD</span>
+            <ArrowRight className="h-4 w-4 stroke-[3]" />
           </button>
         )}
       </div>

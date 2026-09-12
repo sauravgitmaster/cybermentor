@@ -675,3 +675,43 @@ DECODED BARCODE PAYLOAD:
     },
   },
 };
+
+export const MISSION_ORDER: string[] = [
+  'mission-01-email',
+  'mission-02-usb',
+  'mission-03-wifi',
+  'mission-04-qr-scam',
+];
+
+/**
+ * Determines the next mission ID in sequence or the next incomplete incident.
+ */
+export function getNextMissionId(
+  currentMissionId: string,
+  completedMissions: string[] = []
+): string | null {
+  const currentIndex = MISSION_ORDER.indexOf(currentMissionId);
+
+  // 1. Check if the direct subsequent mission in order is uncompleted
+  if (currentIndex >= 0 && currentIndex < MISSION_ORDER.length - 1) {
+    const directNext = MISSION_ORDER[currentIndex + 1];
+    if (!completedMissions.includes(directNext)) {
+      return directNext;
+    }
+  }
+
+  // 2. Find any other uncompleted mission in the campaign
+  const anyUncompleted = MISSION_ORDER.find(
+    (id) => id !== currentMissionId && !completedMissions.includes(id)
+  );
+  if (anyUncompleted) {
+    return anyUncompleted;
+  }
+
+  // 3. If all missions in campaign have been finished at least once, allow sequential cycle
+  if (currentIndex >= 0 && currentIndex < MISSION_ORDER.length - 1) {
+    return MISSION_ORDER[currentIndex + 1];
+  }
+
+  return null;
+}

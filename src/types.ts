@@ -50,6 +50,21 @@ export interface Certificate {
   issueDate: string;
   credentialId: string;
   verifiedScore: number;
+  description?: string;
+  milestoneTrust?: number;
+}
+
+export interface CyberSkillProfile {
+  phishing: number; // 0 - 100 percentage
+  privacy: number; // 0 - 100 percentage
+  deviceSecurity: number; // 0 - 100 percentage
+  socialEngineering: number; // 0 - 100 percentage
+  overallScore?: number;
+  lastAssessedAt?: number;
+  demonstratedStrengths: string[];
+  demonstratedWeaknesses: string[];
+  topStrengthSentence?: string;
+  improvementAreaSentence?: string;
 }
 
 export interface PlayerState {
@@ -65,6 +80,10 @@ export interface PlayerState {
   trustHistory: TrustChangeRecord[];
   achievements: Achievement[];
   certificates: Certificate[];
+  skillProfile: CyberSkillProfile;
+  skillCheckCompleted?: boolean;
+  dailyChallengeCompletedDate?: string;
+  dailyChallengeStreak?: number;
 }
 
 export interface NPC {
@@ -179,6 +198,7 @@ export interface MentorAnalysisResponse {
   evaluation: string;
   securityPrinciple: string;
   mentorVoice: string;
+  personalizedPattern?: string;
   realWorldDefense: string;
   adaptiveRecommendation: string;
   source?: 'gemini' | 'cybermentor-engine';

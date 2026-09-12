@@ -28,6 +28,7 @@ import {
   ScenarioMentorFeedback,
   OptionClassification,
 } from '../../types/scenario';
+import { PlayerState, CyberSkillProfile } from '../../types';
 import { SCENARIOS } from '../../data/scenarios';
 import { ScenarioParticipantAvatar } from './ScenarioParticipantAvatar';
 import { ScenarioArtifactViewer } from './ScenarioArtifactViewer';
@@ -39,6 +40,7 @@ import {
 } from '../../utils/audio';
 
 interface ScenarioOpsViewProps {
+  player?: PlayerState;
   onExitToHome: () => void;
   onEnterRPG: () => void;
 }
@@ -113,6 +115,7 @@ const getOptionVisual = (label: string) => {
 };
 
 export const ScenarioOpsView: React.FC<ScenarioOpsViewProps> = ({
+  player,
   onExitToHome,
   onEnterRPG,
 }) => {
@@ -156,7 +159,7 @@ export const ScenarioOpsView: React.FC<ScenarioOpsViewProps> = ({
 
   const activeScenario = SCENARIOS.find((s) => s.id === activeScenarioId) || SCENARIOS[0];
 
-  // Helper to pick the next random scenario from unplayed session pool
+  // Helper to pick the next scenario from unplayed session pool with adaptive skill weighting
   const pickNextScenario = (currentId: string, history: string[]) => {
     let unplayed = SCENARIOS.filter((s) => !history.includes(s.id));
     let nextHistory = [...history];
@@ -166,6 +169,43 @@ export const ScenarioOpsView: React.FC<ScenarioOpsViewProps> = ({
       unplayed = SCENARIOS.filter((s) => s.id !== currentId);
       if (unplayed.length === 0) unplayed = SCENARIOS;
       nextHistory = [];
+    }
+
+    // Adaptive skill weighting: if player has a skillProfile, prioritize training areas
+    if (player?.skillProfile) {
+      const weightedPool: Scenario[] = [];
+      unplayed.forEach((sc) => {
+        let weight = 1;
+        // Prioritize phishing / social engineering if score is lower
+        if (
+          player.skillProfile.phishingAwareness < 70 &&
+          (sc.category === 'phishing' || sc.category === 'social-engineering')
+        ) {
+          weight += 2;
+        }
+        // Prioritize hardware security if score is lower
+        if (player.skillProfile.hardwareSecurity < 70 && sc.category === 'hardware') {
+          weight += 2;
+        }
+        // Prioritize network vigilance if score is lower
+        if (
+          player.skillProfile.networkVigilance < 70 &&
+          (sc.category === 'wifi' || sc.category === 'qr')
+        ) {
+          weight += 2;
+        }
+        for (let i = 0; i < weight; i++) {
+          weightedPool.push(sc);
+        }
+      });
+
+      const randomIndex = Math.floor(Math.random() * weightedPool.length);
+      const chosen = weightedPool[randomIndex] || unplayed[0];
+
+      return {
+        nextScenario: chosen,
+        newHistory: [...nextHistory, chosen.id],
+      };
     }
 
     const randomIndex = Math.floor(Math.random() * unplayed.length);

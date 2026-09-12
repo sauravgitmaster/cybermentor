@@ -7,7 +7,13 @@ import {
   Shield,
   Code2,
   ArrowRight,
-  Sparkles,
+  GitFork,
+  LayoutGrid,
+  Search,
+  Eye,
+  HelpCircle,
+  Activity,
+  Layers,
 } from 'lucide-react';
 import { CyberAbility, PlayerState } from '../types';
 import { playClickSound, playSuccessSound } from '../utils/audio';
@@ -16,12 +22,36 @@ interface AbilityPanelProps {
   player: PlayerState;
 }
 
+interface TreeNode {
+  abilityId: string;
+  parentId?: string;
+  tier: 1 | 2 | 3;
+  branch: 'vigilance' | 'forensics' | 'countermeasures';
+}
+
+const TREE_HIERARCHY: TreeNode[] = [
+  // Tier 1: Foundation
+  { abilityId: 'OBSERVE', tier: 1, branch: 'vigilance' },
+  { abilityId: 'QUESTION', tier: 1, branch: 'vigilance' },
+
+  // Tier 2: Technical Examination
+  { abilityId: 'INSPECT', parentId: 'OBSERVE', tier: 2, branch: 'forensics' },
+  { abilityId: 'VERIFY', parentId: 'QUESTION', tier: 2, branch: 'forensics' },
+  { abilityId: 'REPORT', parentId: 'QUESTION', tier: 2, branch: 'countermeasures' },
+
+  // Tier 3: Advanced Containment & Response
+  { abilityId: 'ANALYZE', parentId: 'INSPECT', tier: 3, branch: 'forensics' },
+  { abilityId: 'TRACE', parentId: 'VERIFY', tier: 3, branch: 'forensics' },
+  { abilityId: 'ISOLATE', parentId: 'INSPECT', tier: 3, branch: 'countermeasures' },
+  { abilityId: 'PROTECT', parentId: 'REPORT', tier: 3, branch: 'countermeasures' },
+  { abilityId: 'RESPOND', parentId: 'PROTECT', tier: 3, branch: 'countermeasures' },
+];
+
 export const AbilityPanel: React.FC<AbilityPanelProps> = ({ player }) => {
-  const [activeAbility, setActiveAbility] = useState<CyberAbility>(
-    player.abilities[0]
-  );
+  const [viewMode, setViewMode] = useState<'tree' | 'grid'>('tree');
+  const [activeAbility, setActiveAbility] = useState<CyberAbility>(player.abilities[0]);
   const [terminalOutput, setTerminalOutput] = useState<string>(
-    `[CYBER ABILITY MATRIX INITIALIZED]\nSelected ability: ${player.abilities[0].name}\nReady for forensic invocation.`
+    `[CYBER ABILITY MATRIX & SKILL TREE INITIALIZED]\nSelected ability: ${player.abilities[0].name}\nReady for forensic invocation.`
   );
 
   const handleTestCommand = (ability: CyberAbility) => {
@@ -89,6 +119,27 @@ export const AbilityPanel: React.FC<AbilityPanelProps> = ({ player }) => {
           `[LOG] Severing 802.11ax wireless interface. Terminating untrusted USB endpoints.\n` +
           `[RESULT] Host successfully quarantined. Lateral movement halted.`;
         break;
+      case 'PROTECT':
+        simLog =
+          `$ cyber ${ability.command}\n` +
+          `[OK] Defensive perimeter shield locked down.\n` +
+          `[LOG] Rotating multi-factor authentication secrets, invalidating open sessions.\n` +
+          `[RESULT] Account credentials and tokens secured.`;
+        break;
+      case 'REPORT':
+        simLog =
+          `$ cyber ${ability.command}\n` +
+          `[OK] Incident dispatch to Security Operations Center (SOC).\n` +
+          `[LOG] Indicators of Compromise (IoCs) broadcasted to network firewalls.\n` +
+          `[RESULT] Phishing cluster blacklisted enterprise-wide.`;
+        break;
+      case 'RESPOND':
+        simLog =
+          `$ cyber ${ability.command}\n` +
+          `[OK] Threat neutralization & remediation protocol executed.\n` +
+          `[LOG] Rolling back compromised configurations and restoring clean state.\n` +
+          `[RESULT] Incident successfully contained and resolved.`;
+        break;
       default:
         simLog =
           `$ cyber ${ability.command}\n` +
@@ -99,160 +150,307 @@ export const AbilityPanel: React.FC<AbilityPanelProps> = ({ player }) => {
     setTerminalOutput(simLog);
   };
 
+  const getAbilityById = (id: string) => player.abilities.find((a) => a.id === id);
+
   return (
     <div
       id="cyber-ability-matrix-view"
-      className="mx-auto max-w-5xl px-4 py-6 sm:px-6 space-y-6"
+      className="mx-auto max-w-6xl px-4 py-6 sm:px-6 space-y-6 animate-in fade-in duration-200"
     >
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#1b2332] pb-4">
         <div>
-          <div className="flex items-center gap-2 text-xs font-mono text-cyan-400 uppercase tracking-wider">
+          <div className="flex items-center gap-2 text-xs font-mono text-cyan-400 uppercase tracking-wider font-semibold">
             <Zap className="h-4 w-4" />
-            <span>OPERATIVE CAPABILITIES // CYBER ABILITY MATRIX</span>
+            <span>OPERATIVE CAPABILITIES // RPG CYBER SKILL TREE</span>
           </div>
-          <h2 className="text-2xl font-bold text-slate-100 mt-1">
-            Defensive Cybersecurity Abilities
+          <h2 className="text-2xl font-black text-white uppercase font-sans mt-0.5">
+            Defensive Skill Progression
           </h2>
-          <p className="text-xs sm:text-sm text-slate-400">
-            Cybersecurity knowledge formalized into actionable tactical abilities. Earn advanced
-            abilities by completing real-world scenarios.
+          <p className="text-xs sm:text-sm text-slate-400 font-sans">
+            Visualize your mastery tree. Complete missions to unlock advanced forensics, containment, and response protocols.
           </p>
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="rounded border border-[#1e2637] bg-[#0e121a] px-3 py-1.5 text-xs font-mono text-slate-300">
+          {/* View Mode Toggle: Tree vs Grid */}
+          <div className="flex items-center rounded-xl border border-slate-700/70 bg-slate-900/80 p-1 text-xs font-mono">
+            <button
+              onClick={() => {
+                playClickSound();
+                setViewMode('tree');
+              }}
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-lg transition-all cursor-pointer ${
+                viewMode === 'tree'
+                  ? 'bg-cyan-500 text-slate-950 font-bold'
+                  : 'text-slate-300 hover:text-white'
+              }`}
+            >
+              <GitFork className="h-3.5 w-3.5" />
+              <span>SKILL TREE</span>
+            </button>
+            <button
+              onClick={() => {
+                playClickSound();
+                setViewMode('grid');
+              }}
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-lg transition-all cursor-pointer ${
+                viewMode === 'grid'
+                  ? 'bg-cyan-500 text-slate-950 font-bold'
+                  : 'text-slate-300 hover:text-white'
+              }`}
+            >
+              <LayoutGrid className="h-3.5 w-3.5" />
+              <span>GRID VIEW</span>
+            </button>
+          </div>
+
+          <div className="rounded-xl border border-[#21324a] bg-[#0c1421] px-3.5 py-1.5 text-xs font-mono text-slate-300">
             <span>UNLOCKED:</span>{' '}
             <span className="font-bold text-cyan-400">
-              {player.abilities.filter((a) => a.unlocked).length} /{' '}
-              {player.abilities.length}
+              {player.abilities.filter((a) => a.unlocked).length} / {player.abilities.length}
             </span>
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Abilities Grid */}
-        <div className="lg:col-span-7 space-y-4">
-          <div className="text-xs font-mono uppercase text-slate-400 tracking-wider">
-            Basic Tactical Abilities (Foundation)
-          </div>
+        {/* Left / Main Section: Tree or Grid */}
+        <div className="lg:col-span-7 space-y-6">
+          {viewMode === 'tree' ? (
+            /* RPG CYBER SKILL TREE GRAPH */
+            <div className="rounded-3xl border border-[#21344e] bg-[#0c1421] p-5 sm:p-6 space-y-6 relative overflow-hidden">
+              <div className="flex items-center justify-between text-xs font-mono border-b border-[#1c2a3f] pb-3">
+                <span className="text-cyan-400 font-bold uppercase tracking-wider flex items-center gap-1.5">
+                  <GitFork className="h-4 w-4" />
+                  <span>PROGRESSION BRANCHES</span>
+                </span>
+                <span className="text-slate-400">
+                  TIER 1 (FOUNDATION) ➔ TIER 2 (FORENSICS) ➔ TIER 3 (CONTAINMENT)
+                </span>
+              </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {player.abilities
-              .filter((a) => a.tier === 'basic')
-              .map((ability) => {
-                const isSelected = activeAbility.id === ability.id;
-                return (
-                  <button
-                    key={ability.id}
-                    id={`ability-card-${ability.id}`}
-                    onClick={() => handleTestCommand(ability)}
-                    className={`text-left rounded-lg border p-3.5 transition-all ${
-                      isSelected
-                        ? 'border-cyan-500 bg-[#141d2a] shadow-md'
-                        : 'border-[#1f283a] bg-[#0e131d] hover:border-slate-500'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="font-mono text-xs font-bold text-cyan-300">
-                        [{ability.name}]
-                      </span>
-                      <span className="flex items-center gap-1 text-[10px] font-mono text-emerald-400">
-                        <CheckCircle2 className="h-3 w-3" /> ACTIVE
-                      </span>
-                    </div>
-                    <p className="text-xs text-slate-300 line-clamp-2 mb-2">
-                      {ability.description}
-                    </p>
-                    <div className="text-[10px] font-mono text-slate-400">
-                      CMD: {ability.command}
-                    </div>
-                  </button>
-                );
-              })}
-          </div>
+              {/* TIER 1: Foundations */}
+              <div className="space-y-2">
+                <div className="text-[11px] font-mono font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <Layers className="h-3 w-3" />
+                  <span>TIER 1 // COGNITIVE FOUNDATION</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {['OBSERVE', 'QUESTION'].map((id) => {
+                    const ability = getAbilityById(id);
+                    if (!ability) return null;
+                    const isSelected = activeAbility.id === ability.id;
+                    return (
+                      <button
+                        key={ability.id}
+                        id={`ability-node-${ability.id}`}
+                        onClick={() => handleTestCommand(ability)}
+                        className={`text-left rounded-2xl border-2 p-3.5 transition-all cursor-pointer ${
+                          isSelected
+                            ? 'border-cyan-400 bg-cyan-950/40 shadow-lg ring-1 ring-cyan-400/40'
+                            : 'border-cyan-700/50 bg-[#111c2b] hover:border-cyan-500'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="font-mono text-xs font-bold text-cyan-300">
+                            [{ability.name}]
+                          </span>
+                          <span className="flex items-center gap-1 text-[10px] font-mono text-emerald-400">
+                            <CheckCircle2 className="h-3 w-3" /> UNLOCKED
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-300 line-clamp-2 leading-relaxed font-sans">
+                          {ability.description}
+                        </p>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
 
-          <div className="text-xs font-mono uppercase text-slate-400 tracking-wider pt-2">
-            Advanced Specializations (Unlocked through Missions)
-          </div>
+              {/* Connecting Tree Divider */}
+              <div className="flex items-center justify-center gap-2 text-cyan-500/60 font-mono text-xs py-1">
+                <span>↓ BRANCHING FORENSIC PATHS ↓</span>
+              </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {player.abilities
-              .filter((a) => a.tier === 'advanced')
-              .map((ability) => {
-                const isSelected = activeAbility.id === ability.id;
-                const isUnlocked = ability.unlocked;
+              {/* TIER 2: Investigation & Technical Examination */}
+              <div className="space-y-2">
+                <div className="text-[11px] font-mono font-bold text-cyan-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <Layers className="h-3 w-3" />
+                  <span>TIER 2 // FORENSIC ANALYSIS &amp; PROTOCOL</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  {['INSPECT', 'VERIFY', 'REPORT'].map((id) => {
+                    const ability = getAbilityById(id);
+                    if (!ability) return null;
+                    const isSelected = activeAbility.id === ability.id;
+                    const isUnlocked = ability.unlocked;
+                    return (
+                      <button
+                        key={ability.id}
+                        id={`ability-node-${ability.id}`}
+                        onClick={() => handleTestCommand(ability)}
+                        className={`text-left rounded-2xl border-2 p-3 transition-all cursor-pointer ${
+                          isSelected
+                            ? 'border-cyan-400 bg-cyan-950/40 shadow-lg'
+                            : isUnlocked
+                            ? 'border-[#243750] bg-[#111a28] hover:border-cyan-500'
+                            : 'border-slate-800 bg-slate-900/40 opacity-60'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="font-mono text-xs font-bold text-slate-200">
+                            [{ability.name}]
+                          </span>
+                          {isUnlocked ? (
+                            <CheckCircle2 className="h-3 w-3 text-cyan-400" />
+                          ) : (
+                            <Lock className="h-3 w-3 text-slate-500" />
+                          )}
+                        </div>
+                        <p className="text-[11px] text-slate-300 line-clamp-2 font-sans">
+                          {ability.description}
+                        </p>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
 
-                return (
-                  <button
-                    key={ability.id}
-                    id={`ability-card-${ability.id}`}
-                    onClick={() => handleTestCommand(ability)}
-                    className={`text-left rounded-lg border p-3.5 transition-all ${
-                      isUnlocked
-                        ? isSelected
-                          ? 'border-cyan-500 bg-[#141d2a] shadow-md'
-                          : 'border-[#1f283a] bg-[#0e131d] hover:border-slate-500'
-                        : 'border-[#18202d] bg-[#090c12] opacity-60'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="font-mono text-xs font-bold text-slate-200">
-                        [{ability.name}]
-                      </span>
-                      {isUnlocked ? (
-                        <span className="flex items-center gap-1 text-[10px] font-mono text-cyan-300">
-                          <CheckCircle2 className="h-3 w-3" /> UNLOCKED
+              {/* Connecting Tree Divider */}
+              <div className="flex items-center justify-center gap-2 text-cyan-500/60 font-mono text-xs py-1">
+                <span>↓ ADVANCED CONTAINMENT &amp; MITIGATION ↓</span>
+              </div>
+
+              {/* TIER 3: Deep Countermeasures */}
+              <div className="space-y-2">
+                <div className="text-[11px] font-mono font-bold text-purple-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <Layers className="h-3 w-3" />
+                  <span>TIER 3 // DEFENSIVE MITIGATION &amp; RESILIENCE</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {['ANALYZE', 'TRACE', 'ISOLATE', 'PROTECT', 'RESPOND'].map((id) => {
+                    const ability = getAbilityById(id);
+                    if (!ability) return null;
+                    const isSelected = activeAbility.id === ability.id;
+                    const isUnlocked = ability.unlocked;
+                    return (
+                      <button
+                        key={ability.id}
+                        id={`ability-node-${ability.id}`}
+                        onClick={() => handleTestCommand(ability)}
+                        className={`text-left rounded-2xl border-2 p-3 transition-all cursor-pointer ${
+                          isSelected
+                            ? 'border-purple-400 bg-purple-950/40 shadow-lg'
+                            : isUnlocked
+                            ? 'border-[#2d2f4d] bg-[#141525] hover:border-purple-400'
+                            : 'border-slate-800 bg-slate-900/40 opacity-50'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="font-mono text-xs font-bold text-slate-200">
+                            [{ability.name}]
+                          </span>
+                          {isUnlocked ? (
+                            <span className="text-[10px] font-mono text-purple-300 flex items-center gap-1">
+                              <CheckCircle2 className="h-3 w-3" /> READY
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-mono text-slate-500 flex items-center gap-1">
+                              <Lock className="h-3 w-3" /> LOCKED
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-slate-300 line-clamp-2 font-sans">
+                          {ability.description}
+                        </p>
+                        <div className="mt-2 text-[10px] font-mono text-slate-400">
+                          {isUnlocked
+                            ? `CMD: ${ability.command}`
+                            : `Earn via: ${ability.unlockedInMission || 'Missions'}`}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          ) : (
+            /* Standard Grid View fallback */
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {player.abilities.map((ability) => {
+                  const isSelected = activeAbility.id === ability.id;
+                  const isUnlocked = ability.unlocked;
+                  return (
+                    <button
+                      key={ability.id}
+                      onClick={() => handleTestCommand(ability)}
+                      className={`text-left rounded-2xl border p-4 transition-all cursor-pointer ${
+                        isSelected
+                          ? 'border-cyan-400 bg-[#142030] shadow-md'
+                          : isUnlocked
+                          ? 'border-[#1f283a] bg-[#0e131d] hover:border-slate-500'
+                          : 'border-slate-800 bg-slate-900/40 opacity-50'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-mono text-xs font-bold text-cyan-300">
+                          [{ability.name}]
                         </span>
-                      ) : (
-                        <span className="flex items-center gap-1 text-[10px] font-mono text-slate-400">
-                          <Lock className="h-3 w-3" /> LOCKED
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs text-slate-300 line-clamp-2 mb-2">
-                      {ability.description}
-                    </p>
-                    <div className="text-[10px] font-mono text-slate-400">
-                      {isUnlocked
-                        ? `CMD: ${ability.command}`
-                        : ability.unlockedInMission
-                        ? `Earn via: ${ability.unlockedInMission}`
-                        : 'Earn via advanced missions'}
-                    </div>
-                  </button>
-                );
-              })}
-          </div>
+                        {isUnlocked ? (
+                          <span className="flex items-center gap-1 text-[10px] font-mono text-emerald-400">
+                            <CheckCircle2 className="h-3 w-3" /> ACTIVE
+                          </span>
+                        ) : (
+                          <span className="flex items-center gap-1 text-[10px] font-mono text-slate-500">
+                            <Lock className="h-3 w-3" /> LOCKED
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-slate-300 line-clamp-2 mb-2">
+                        {ability.description}
+                      </p>
+                      <div className="text-[10px] font-mono text-slate-400">
+                        CMD: {ability.command}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Ability Execution Simulator Terminal */}
-        <div className="lg:col-span-5 rounded-xl border border-[#1d2638] bg-[#090c12] p-4 flex flex-col justify-between shadow-xl">
+        {/* Right Section: Sandbox Simulator Terminal */}
+        <div className="lg:col-span-5 rounded-3xl border border-[#21344e] bg-[#0c1421] p-5 flex flex-col justify-between shadow-xl">
           <div>
-            <div className="flex items-center justify-between border-b border-[#1a2333] pb-2.5 mb-3 text-xs font-mono text-slate-400">
+            <div className="flex items-center justify-between border-b border-[#1c2c44] pb-3 mb-3 text-xs font-mono text-slate-400">
               <div className="flex items-center gap-2">
-                <Terminal className="h-3.5 w-3.5 text-cyan-400" />
-                <span>SANDBOX SIMULATOR</span>
+                <Terminal className="h-4 w-4 text-cyan-400" />
+                <span className="font-bold uppercase tracking-wider text-slate-200">
+                  ABILITY TERMINAL
+                </span>
               </div>
-              <span className="text-[10px] text-cyan-300">
-                ACTIVE TARGET: [{activeAbility.name}]
+              <span className="text-[11px] font-mono text-cyan-300">
+                ACTIVE: [{activeAbility.name}]
               </span>
             </div>
 
-            <div className="rounded bg-[#040609] p-3 font-mono text-xs text-emerald-400/90 whitespace-pre-wrap leading-relaxed min-h-[260px] border border-[#161c28]">
+            <div className="rounded-2xl bg-[#060a11] p-4 font-mono text-xs text-emerald-400/90 whitespace-pre-wrap leading-relaxed min-h-[300px] border border-[#162233] shadow-inner">
               {terminalOutput}
             </div>
           </div>
 
-          <div className="pt-3 border-t border-[#18212f]">
+          <div className="pt-4 border-t border-[#1c2c44] mt-4">
             <button
               id="test-selected-ability-btn"
               onClick={() => handleTestCommand(activeAbility)}
-              className="w-full rounded bg-cyan-600 hover:bg-cyan-500 text-slate-950 py-2 text-xs font-bold font-mono transition-colors flex items-center justify-center gap-2"
+              className="w-full rounded-2xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 py-3 text-xs font-extrabold font-mono transition-all flex items-center justify-center gap-2 shadow-lg shadow-cyan-500/20 cursor-pointer"
             >
               <span>RUN EXECUTION TEST</span>
-              <ArrowRight className="h-3.5 w-3.5" />
+              <ArrowRight className="h-4 w-4" />
             </button>
           </div>
         </div>

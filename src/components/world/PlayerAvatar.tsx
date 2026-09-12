@@ -26,30 +26,22 @@ export const PlayerAvatar: React.FC<PlayerAvatarProps> = ({
         transform: 'translate(-50%, -85%)',
       }}
     >
-      {/* Operative Nameplate - Crisp, Charming RPG Badge */}
-      <div className="absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap">
-        <div className="px-2 py-0.5 text-[10px] font-mono font-bold tracking-wider text-amber-300 bg-[#162032]/95 border border-[#3b5278] rounded-full shadow-md flex items-center gap-1">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-          <span>{playerName.toUpperCase()}</span>
-        </div>
-      </div>
-
-      {/* Ground Contact Shadow */}
+      {/* Ground Contact Shadow - Soft & natural */}
       <div
-        className={`absolute left-1/2 top-[34px] -translate-x-1/2 rounded-full bg-black/40 blur-[1px] transition-all duration-200 ${
-          isMoving ? 'w-6 h-2 opacity-60' : 'w-7 h-2.5 opacity-80'
+        className={`absolute left-1/2 top-[40px] -translate-x-1/2 rounded-full bg-black/45 blur-[1.5px] transition-all duration-200 ${
+          isMoving ? 'w-8 h-2.5 opacity-60' : 'w-9 h-3 opacity-80'
         }`}
       />
 
-      {/* 2D RPG Protagonist Character Sprite */}
+      {/* 2D RPG Protagonist Character Sprite - Heroic, expressive, clearly readable */}
       <div
-        className={`relative w-9 h-10 transition-transform duration-150 ease-out ${
-          isMoving ? 'avatar-walk-bob' : 'hover:scale-105'
+        className={`relative w-11 h-12 transition-transform duration-150 ease-out ${
+          isMoving ? 'avatar-walk-bob' : ''
         }`}
       >
         <svg
           viewBox="0 0 36 40"
-          className="w-9 h-10 drop-shadow-md"
+          className="w-11 h-12 drop-shadow-lg"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
         >

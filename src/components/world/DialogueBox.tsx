@@ -183,62 +183,56 @@ export const DialogueBox: React.FC<DialogueBoxProps> = ({
   return (
     <div
       id="rpg-dialogue-modal"
-      className="absolute bottom-4 left-4 right-4 sm:left-6 sm:right-6 z-40 animate-in slide-in-from-bottom-3 duration-200 select-none"
+      className="absolute bottom-4 left-4 right-4 sm:left-8 sm:right-8 z-40 animate-in slide-in-from-bottom-4 duration-200 select-none"
     >
-      <div className="max-w-4xl mx-auto rounded-xl border-2 border-[#425066] bg-[#101726]/95 backdrop-blur-md shadow-2xl p-4 sm:p-5 relative text-slate-100">
-        {/* Subtle decorative RPG corners */}
-        <div className="absolute -top-1 -left-1 w-2.5 h-2.5 bg-[#f59e0b] border border-black" />
-        <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-[#f59e0b] border border-black" />
-        <div className="absolute -bottom-1 -left-1 w-2.5 h-2.5 bg-[#f59e0b] border border-black" />
-        <div className="absolute -bottom-1 -right-1 w-2.5 h-2.5 bg-[#f59e0b] border border-black" />
-
+      <div className="max-w-3xl mx-auto rounded-2xl border-2 border-[#3b537a] bg-[#0b1320]/98 backdrop-blur-md shadow-2xl p-5 sm:p-6 relative text-slate-100 ring-1 ring-white/10">
         {/* Close / Dismiss Button */}
         <button
           onClick={() => {
             playClickSound();
             onClose();
           }}
-          className="absolute top-3 right-3 p-1.5 text-slate-400 hover:text-slate-100 hover:bg-white/10 rounded transition-colors"
+          className="absolute top-4 right-4 p-2 text-slate-400 hover:text-white hover:bg-slate-800/60 rounded-xl transition-colors"
           title="Dismiss dialogue"
         >
-          <X className="h-4 w-4" />
+          <X className="h-5 w-5" />
         </button>
 
-        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+        <div className="flex flex-col sm:flex-row gap-5 items-start sm:items-center">
           {/* Character Portrait */}
-          {renderPortrait()}
+          <div className="shrink-0">{renderPortrait()}</div>
 
           {/* Dialogue Content */}
-          <div className="flex-1 space-y-2 min-w-0 pr-6">
-            {/* Header: Name and Affiliation Tag */}
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="font-bold text-amber-300 text-sm sm:text-base tracking-wide font-mono">
+          <div className="flex-1 space-y-2.5 min-w-0 pr-8">
+            {/* Header: Name and Role */}
+            <div className="flex flex-wrap items-center gap-2.5">
+              <span className="font-bold text-amber-300 text-base sm:text-lg tracking-wide font-mono">
                 {dialogue.name}
               </span>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-[#1e2a40] text-cyan-300 border border-[#2d3e5e]">
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#1a283e] text-cyan-300 border border-[#2b4163]">
                 {dialogue.role}
               </span>
               {isCompleted && (
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-950 text-emerald-300 border border-emerald-800 flex items-center gap-1">
-                  <ShieldCheck className="h-3 w-3" />
-                  INCIDENT DISARMED
+                <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-950/90 text-emerald-300 border border-emerald-700/60 flex items-center gap-1.5">
+                  <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" />
+                  SAFE
                 </span>
               )}
             </div>
 
-            {/* Spoken Text */}
-            <p className="text-sm sm:text-base text-slate-200 leading-relaxed font-sans min-h-[48px]">
+            {/* Spoken Text - Highly readable & clean */}
+            <p className="text-base sm:text-lg text-slate-100 leading-relaxed font-sans min-h-[52px]">
               "{speechLines[speechIndex]}"
             </p>
 
-            {/* Pagination Indicator if multi-part dialogue */}
+            {/* Pagination dots if multi-part dialogue */}
             {speechLines.length > 1 && (
-              <div className="flex items-center gap-1.5 pt-1">
+              <div className="flex items-center gap-2 pt-1">
                 {speechLines.map((_, idx) => (
                   <span
                     key={idx}
-                    className={`h-1.5 rounded-full transition-all ${
-                      idx === speechIndex ? 'w-5 bg-amber-400' : 'w-2 bg-slate-600'
+                    className={`h-2 rounded-full transition-all duration-200 ${
+                      idx === speechIndex ? 'w-6 bg-amber-400' : 'w-2 bg-slate-600'
                     }`}
                   />
                 ))}
@@ -248,34 +242,34 @@ export const DialogueBox: React.FC<DialogueBoxProps> = ({
         </div>
 
         {/* Bottom Action Footer */}
-        <div className="mt-4 pt-3 border-t border-[#25334d] flex flex-wrap items-center justify-between gap-3">
-          <div className="text-[11px] font-mono text-slate-400 flex items-center gap-1.5">
-            <span className="px-1.5 py-0.5 rounded bg-black/40 border border-slate-700 text-amber-400 font-bold">
+        <div className="mt-5 pt-4 border-t border-[#1e2f47] flex flex-wrap items-center justify-between gap-4">
+          <div className="text-xs font-mono text-slate-400 flex items-center gap-2">
+            <span className="px-2 py-0.5 rounded-md bg-slate-800 border border-slate-700 text-amber-300 font-bold text-[11px]">
               [SPACE]
             </span>
-            <span>or click to continue</span>
+            <span>press space or click to continue</span>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             {!isLastLine && (
               <button
                 onClick={handleNext}
-                className="px-3 py-1.5 text-xs font-semibold text-slate-200 bg-[#1e2a40] hover:bg-[#2a3c5a] border border-[#3b5175] rounded-md transition-colors flex items-center gap-1"
+                className="px-4 py-2 text-sm font-bold text-slate-100 bg-[#1e2e46] hover:bg-[#283d5d] border border-[#3c557c] rounded-xl transition-colors flex items-center gap-2 cursor-pointer"
               >
                 <span>Continue</span>
-                <ArrowRight className="h-3 w-3" />
+                <ArrowRight className="h-4 w-4" />
               </button>
             )}
 
             <button
               onClick={handleAction}
-              className={`px-4 py-2 text-xs sm:text-sm font-bold rounded-md shadow-md transition-all flex items-center gap-2 cursor-pointer ${
+              className={`px-5 py-2.5 text-sm font-black rounded-xl shadow-lg transition-all flex items-center gap-2.5 cursor-pointer active:scale-95 ${
                 isCompleted
                   ? 'bg-slate-700 hover:bg-slate-600 text-white'
-                  : 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950'
+                  : 'bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 ring-2 ring-amber-400/30'
               }`}
             >
-              <Play className="h-3.5 w-3.5 fill-current" />
+              <Play className="h-4 w-4 fill-current" />
               <span>{isCompleted ? dialogue.reviewActionLabel : dialogue.primaryActionLabel}</span>
             </button>
           </div>

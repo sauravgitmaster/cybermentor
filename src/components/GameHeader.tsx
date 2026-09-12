@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Home,
   Compass,
@@ -10,6 +10,11 @@ import {
   RotateCcw,
   HelpCircle,
   Brain,
+  Menu,
+  X,
+  Calendar,
+  Sparkles,
+  Lock,
 } from 'lucide-react';
 import { PlayerState } from '../types';
 import { playClickSound } from '../utils/audio';
@@ -21,6 +26,8 @@ interface GameHeaderProps {
   soundMuted: boolean;
   onToggleSound: () => void;
   onOpenHelp: () => void;
+  onOpenSkillCheck?: () => void;
+  onOpenDailyChallenge?: () => void;
   onResetProgress: () => void;
 }
 
@@ -31,29 +38,51 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
   soundMuted,
   onToggleSound,
   onOpenHelp,
+  onOpenSkillCheck,
+  onOpenDailyChallenge,
   onResetProgress,
 }) => {
-  const trustVal = Math.min(100, Math.max(0, player.digitalTrust));
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
   const unlockedAbilitiesCount = player.abilities.filter((a) => a.unlocked).length;
+
+  // Close menu on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    };
+    if (isMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isMenuOpen]);
+
+  const handleMenuSelect = (tab: 'home' | 'world' | 'abilities' | 'evidence' | 'profile' | 'scenario-ops') => {
+    playClickSound();
+    setIsMenuOpen(false);
+    onSelectTab(tab);
+  };
 
   return (
     <header
       id="game-header"
-      className="sticky top-0 z-40 w-full border-b-2 border-[#385175] bg-[#0f172a] px-4 py-2 select-none shadow-md"
+      className="sticky top-0 z-40 w-full border-b border-[#20324d] bg-[#0c1421]/90 backdrop-blur-md px-4 py-2.5 select-none"
     >
-      <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
-        {/* Brand & Operative Badge */}
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
+        {/* Simple Brand: Protagonist + Title */}
         <div className="flex items-center gap-3">
           <button
             id="header-brand-btn"
             onClick={() => {
               playClickSound();
-              onSelectTab('world');
+              onSelectTab('home');
             }}
-            className="flex items-center gap-2.5 text-left focus:outline-none group"
+            className="flex items-center gap-2.5 text-left focus:outline-none group cursor-pointer"
           >
             {/* Cute 2D RPG Protagonist mini sprite */}
-            <div className="flex h-8 w-8 items-center justify-center rounded-md border border-[#3b5175] bg-[#1a2942] group-hover:border-amber-400/80 transition-colors shadow-inner">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#314a70] bg-[#142236] group-hover:border-amber-400/80 transition-colors shadow-sm">
               <svg width="22" height="22" viewBox="0 0 32 32">
                 <rect x="6" y="5" width="20" height="9" rx="3" fill="#92400e" />
                 <rect x="7" y="10" width="18" height="13" rx="3" fill="#e2b992" />
@@ -63,275 +92,234 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
                 <rect x="8" y="23" width="16" height="7" rx="2" fill="#0284c7" />
               </svg>
             </div>
-            <div className="flex flex-col">
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs font-mono font-bold tracking-wider text-amber-300 uppercase">
-                  CYBERMENTOR
-                </span>
-                <span className="text-[9px] font-mono px-1 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40">
-                  2D RPG
-                </span>
-              </div>
-              <span className="text-[10px] font-mono text-slate-400">
-                {player.name.toUpperCase()} // LVL 1
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-bold tracking-wider text-slate-100 uppercase font-sans">
+                CYBERMENTOR <span className="text-cyan-400 font-extrabold">AI</span>
               </span>
             </div>
           </button>
         </div>
 
-        {/* Primary RPG Action Bar */}
-        <nav className="hidden md:flex items-center gap-1 bg-[#16233b] p-1 rounded-lg border border-[#385175]">
+        {/* Minimal Controls Area - Does not compete with the game world */}
+        <div className="flex items-center gap-2 relative" ref={menuRef}>
+          {/* Direct HOME Button */}
           <button
             id="nav-tab-home"
             onClick={() => {
               playClickSound();
               onSelectTab('home');
             }}
-            title="Return to CyberMentor AI Homepage"
-            className={`flex items-center gap-1.5 px-3 py-1 text-xs font-mono rounded transition-colors ${
-              activeTab === 'home'
-                ? 'bg-amber-500/20 border border-amber-500/60 text-amber-300 font-bold'
-                : 'text-slate-300 hover:text-white hover:bg-[#1a2b47]'
-            }`}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-slate-700/60 bg-slate-900/60 hover:bg-slate-800 text-xs font-semibold text-slate-200 hover:text-white transition-all cursor-pointer shadow-xs"
           >
-            <Home className="h-3.5 w-3.5" />
+            <Home className="h-4 w-4 text-amber-400" />
             <span>HOME</span>
           </button>
 
+          {/* Contextual In-Game Systems Menu */}
           <button
-            id="nav-tab-scenario-ops"
+            id="nav-tab-menu"
             onClick={() => {
               playClickSound();
-              onSelectTab('scenario-ops');
+              setIsMenuOpen((prev) => !prev);
             }}
-            className={`flex items-center gap-1.5 px-3 py-1 text-xs font-mono rounded transition-colors ${
-              activeTab === 'scenario-ops'
-                ? 'bg-amber-500/30 border border-amber-400 text-amber-300 font-bold shadow'
-                : 'text-amber-300/90 hover:text-amber-200 hover:bg-[#1a2b47]'
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border transition-all cursor-pointer shadow-xs text-xs font-semibold ${
+              isMenuOpen
+                ? 'border-amber-400/80 bg-amber-500/20 text-amber-300'
+                : 'border-slate-700/60 bg-slate-900/60 hover:bg-slate-800 text-slate-200 hover:text-white'
             }`}
+            aria-label="Toggle Systems Menu"
           >
-            <Brain className="h-3.5 w-3.5 text-amber-400" />
-            <span>SCENARIO OPS</span>
+            {isMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+            <span className="hidden sm:inline">SYSTEMS</span>
           </button>
 
+          {/* Audio Toggle */}
           <button
-            id="nav-tab-world"
-            onClick={() => {
-              playClickSound();
-              onSelectTab('world');
-            }}
-            className={`flex items-center gap-1.5 px-3 py-1 text-xs font-mono rounded transition-colors ${
-              activeTab === 'world' || activeTab === 'location' || activeTab === 'mission'
-                ? 'bg-amber-500/20 border border-amber-500/60 text-amber-300 font-bold'
-                : 'text-slate-300 hover:text-white hover:bg-[#1a2b47]'
-            }`}
+            id="header-sound-toggle-btn"
+            onClick={onToggleSound}
+            title={soundMuted ? 'Turn Sound On' : 'Turn Sound Off'}
+            className="p-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800/80 border border-slate-700/40 transition-colors cursor-pointer"
           >
-            <Compass className="h-3.5 w-3.5" />
-            <span>SECTOR MAP</span>
-          </button>
-
-          <button
-            id="nav-tab-abilities"
-            onClick={() => {
-              playClickSound();
-              onSelectTab('abilities');
-            }}
-            className={`flex items-center gap-1.5 px-3 py-1 text-xs font-mono rounded transition-colors ${
-              activeTab === 'abilities'
-                ? 'bg-amber-500/20 border border-amber-500/60 text-amber-300 font-bold'
-                : 'text-slate-300 hover:text-white hover:bg-[#1a2b47]'
-            }`}
-          >
-            <Zap className="h-3.5 w-3.5" />
-            <span>ABILITIES</span>
-            <span className="text-[10px] px-1 rounded bg-black/40 text-cyan-300 font-bold">
-              {unlockedAbilitiesCount}
-            </span>
-          </button>
-
-          <button
-            id="nav-tab-evidence"
-            onClick={() => {
-              playClickSound();
-              onSelectTab('evidence');
-            }}
-            className={`flex items-center gap-1.5 px-3 py-1 text-xs font-mono rounded transition-colors ${
-              activeTab === 'evidence'
-                ? 'bg-amber-500/20 border border-amber-500/60 text-amber-300 font-bold'
-                : 'text-slate-300 hover:text-white hover:bg-[#1a2b47]'
-            }`}
-          >
-            <FolderOpen className="h-3.5 w-3.5" />
-            <span>EVIDENCE</span>
-            {player.evidence.length > 0 && (
-              <span className="text-[10px] px-1 rounded bg-black/40 text-amber-300 font-bold">
-                {player.evidence.length}
-              </span>
+            {soundMuted ? (
+              <VolumeX className="h-4 w-4 text-slate-400" />
+            ) : (
+              <Volume2 className="h-4 w-4 text-amber-400" />
             )}
           </button>
 
+          {/* Help Button */}
           <button
-            id="nav-tab-profile"
+            id="header-help-btn"
             onClick={() => {
               playClickSound();
-              onSelectTab('profile');
+              onOpenHelp();
             }}
-            className={`flex items-center gap-1.5 px-3 py-1 text-xs font-mono rounded transition-colors ${
-              activeTab === 'profile'
-                ? 'bg-amber-500/20 border border-amber-500/60 text-amber-300 font-bold'
-                : 'text-slate-300 hover:text-white hover:bg-[#1a2b47]'
-            }`}
+            title="Guide & How It Works"
+            className="p-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800/80 border border-slate-700/40 transition-colors cursor-pointer"
           >
-            <User className="h-3.5 w-3.5" />
-            <span>DOSSIER</span>
+            <HelpCircle className="h-4 w-4 text-slate-300" />
           </button>
-        </nav>
 
-        {/* Digital Trust Bar & Utility Controls */}
-        <div className="flex items-center gap-3">
-          {/* Digital Trust Gauge */}
-          <div
-            id="trust-meter-display"
-            className="flex items-center gap-2 rounded-lg border border-[#385175] bg-[#16233b] px-3 py-1 text-xs font-mono shadow-inner"
-            title="Digital Trust strictly measures verified defensive cybersecurity decisions."
-          >
-            <span className="text-[11px] text-amber-400 font-bold">★ TRUST</span>
-            <span className="text-cyan-300 font-bold">
-              {trustVal.toString().padStart(3, '0')}
-            </span>
-            <span className="text-slate-400 text-[10px]">/100</span>
+          {/* Dropdown Menu for Contextual Systems */}
+          {isMenuOpen && (
+            <div className="absolute right-0 top-11 w-56 rounded-2xl border-2 border-[#2b4163] bg-[#0c1524]/98 shadow-2xl p-2 z-50 animate-in fade-in zoom-in-95 duration-150 backdrop-blur-md ring-1 ring-white/10">
+              <div className="px-3 py-1.5 border-b border-[#1f314d] text-[10px] font-mono font-bold text-slate-400 uppercase tracking-wider">
+                Operative Systems
+              </div>
+              <div className="mt-1 space-y-1">
+                <button
+                  onClick={() => handleMenuSelect('world')}
+                  className="w-full flex items-center justify-between px-3 py-2 rounded-xl hover:bg-[#182942] text-xs font-medium text-slate-200 hover:text-white transition-colors text-left"
+                >
+                  <span className="flex items-center gap-2">
+                    <Compass className="h-4 w-4 text-cyan-400" />
+                    <span>Sector Map</span>
+                  </span>
+                </button>
 
-            {/* Segmented Trust Progress Bar */}
-            <div className="hidden sm:flex items-center gap-0.5 ml-1">
-              {[0, 10, 20, 30, 40, 50, 60, 70, 80, 90].map((step) => (
-                <div
-                  key={step}
-                  className={`h-2.5 w-1.5 rounded-sm transition-colors ${
-                    trustVal > step
-                      ? trustVal < 25
-                        ? 'bg-amber-400 shadow-[0_0_4px_rgba(251,191,36,0.8)]'
-                        : 'bg-emerald-400 shadow-[0_0_4px_rgba(52,211,153,0.8)]'
-                      : 'bg-[#2b3c58]'
-                  }`}
-                />
-              ))}
+                <button
+                  onClick={() => handleMenuSelect('scenario-ops')}
+                  className="w-full flex items-center justify-between px-3 py-2 rounded-xl hover:bg-[#182942] text-xs font-medium text-slate-200 hover:text-white transition-colors text-left"
+                >
+                  <span className="flex items-center gap-2">
+                    <Brain className="h-4 w-4 text-amber-400" />
+                    <span>Scenario Ops</span>
+                  </span>
+                </button>
+
+                {/* Evidence Notebook - Revealed when evidence collected or after mission 1 */}
+                {player.evidence.length > 0 || player.completedMissions.length > 0 ? (
+                  <button
+                    onClick={() => handleMenuSelect('evidence')}
+                    className="w-full flex items-center justify-between px-3 py-2 rounded-xl hover:bg-[#182942] text-xs font-medium text-slate-200 hover:text-white transition-colors text-left"
+                  >
+                    <span className="flex items-center gap-2">
+                      <FolderOpen className="h-4 w-4 text-indigo-400" />
+                      <span>Evidence Notebook</span>
+                    </span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-black/40 text-amber-300 font-mono font-bold">
+                      {player.evidence.length}
+                    </span>
+                  </button>
+                ) : (
+                  <div
+                    className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium text-slate-500 cursor-not-allowed select-none"
+                    title="Discovered during investigation missions"
+                  >
+                    <span className="flex items-center gap-2">
+                      <Lock className="h-3.5 w-3.5 text-slate-600" />
+                      <span>Evidence Notebook</span>
+                    </span>
+                    <span className="text-[10px] font-mono text-slate-600">Mission 1</span>
+                  </div>
+                )}
+
+                {/* Abilities - Unlocked after completing first mission */}
+                {player.completedMissions.length > 0 ? (
+                  <button
+                    onClick={() => handleMenuSelect('abilities')}
+                    className="w-full flex items-center justify-between px-3 py-2 rounded-xl hover:bg-[#182942] text-xs font-medium text-slate-200 hover:text-white transition-colors text-left"
+                  >
+                    <span className="flex items-center gap-2">
+                      <Zap className="h-4 w-4 text-amber-300" />
+                      <span>Abilities</span>
+                    </span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-black/40 text-cyan-300 font-mono font-bold">
+                      {unlockedAbilitiesCount}
+                    </span>
+                  </button>
+                ) : (
+                  <div
+                    className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium text-slate-500 cursor-not-allowed select-none"
+                    title="Unlocks after resolving your first incident"
+                  >
+                    <span className="flex items-center gap-2">
+                      <Lock className="h-3.5 w-3.5 text-slate-600" />
+                      <span>Abilities</span>
+                    </span>
+                    <span className="text-[10px] font-mono text-slate-600">After M1</span>
+                  </div>
+                )}
+
+                {/* Operative Dossier - Full profile unlocked as progression advances */}
+                {player.completedMissions.length > 0 ? (
+                  <button
+                    onClick={() => handleMenuSelect('profile')}
+                    className="w-full flex items-center justify-between px-3 py-2 rounded-xl hover:bg-[#182942] text-xs font-medium text-slate-200 hover:text-white transition-colors text-left"
+                  >
+                    <span className="flex items-center gap-2">
+                      <User className="h-4 w-4 text-emerald-400" />
+                      <span>Operative Dossier</span>
+                    </span>
+                  </button>
+                ) : (
+                  <div
+                    className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium text-slate-500 cursor-not-allowed select-none"
+                    title="Dossier expands as you complete missions and unlock certificates"
+                  >
+                    <span className="flex items-center gap-2">
+                      <Lock className="h-3.5 w-3.5 text-slate-600" />
+                      <span>Operative Dossier</span>
+                    </span>
+                    <span className="text-[10px] font-mono text-slate-600">After M1</span>
+                  </div>
+                )}
+
+                {/* Daily Challenge - Unlocked after establishing foundational knowledge */}
+                {onOpenDailyChallenge && player.completedMissions.length > 0 && (
+                  <button
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      onOpenDailyChallenge();
+                    }}
+                    className="w-full flex items-center justify-between px-3 py-2 rounded-xl hover:bg-[#182942] text-xs font-medium text-amber-300 hover:text-amber-200 transition-colors text-left"
+                  >
+                    <span className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-amber-400" />
+                      <span>Daily Challenge</span>
+                    </span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-950/60 border border-amber-700/60 text-amber-300 font-mono">
+                      +10 Trust
+                    </span>
+                  </button>
+                )}
+
+                {onOpenSkillCheck && (
+                  <button
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      onOpenSkillCheck();
+                    }}
+                    className="w-full flex items-center justify-between px-3 py-2 rounded-xl hover:bg-[#182942] text-xs font-medium text-cyan-300 hover:text-cyan-200 transition-colors text-left"
+                  >
+                    <span className="flex items-center gap-2">
+                      <Brain className="h-4 w-4 text-cyan-400" />
+                      <span>Skill Diagnostic</span>
+                    </span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyan-950/60 border border-cyan-700/60 text-cyan-300 font-mono">
+                      {player.skillCheckCompleted ? 'Retake' : 'New'}
+                    </span>
+                  </button>
+                )}
+              </div>
+
+              <div className="mt-2 pt-2 border-t border-[#1f314d]">
+                <button
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    onResetProgress();
+                  }}
+                  className="w-full flex items-center gap-2 px-3 py-1.5 rounded-xl hover:bg-rose-950/40 text-slate-400 hover:text-rose-300 text-xs transition-colors"
+                >
+                  <RotateCcw className="h-3.5 w-3.5 text-rose-400" />
+                  <span>Reset Progress</span>
+                </button>
+              </div>
             </div>
-          </div>
-
-          {/* Audio, Help & Reset Controls */}
-          <div className="flex items-center gap-1">
-            <button
-              id="header-sound-toggle-btn"
-              onClick={onToggleSound}
-              title={soundMuted ? 'Unmute tactical audio' : 'Mute tactical audio'}
-              className="p-1.5 rounded text-slate-300 hover:text-white hover:bg-[#1a2b47] transition-colors border border-transparent hover:border-[#3b5175]"
-            >
-              {soundMuted ? (
-                <VolumeX className="h-4 w-4 text-slate-400" />
-              ) : (
-                <Volume2 className="h-4 w-4 text-amber-400" />
-              )}
-            </button>
-
-            <button
-              id="header-help-btn"
-              onClick={() => {
-                playClickSound();
-                onOpenHelp();
-              }}
-              title="Operative Guide & Rules"
-              className="p-1.5 rounded text-slate-300 hover:text-white hover:bg-[#1a2b47] transition-colors border border-transparent hover:border-[#3b5175]"
-            >
-              <HelpCircle className="h-4 w-4" />
-            </button>
-
-            <button
-              id="header-reset-btn"
-              onClick={onResetProgress}
-              title="Reset operative simulation progress to zero"
-              className="hidden sm:inline-flex p-1.5 rounded text-slate-400 hover:text-rose-400 hover:bg-[#1a2b47] transition-colors border border-transparent hover:border-[#3b5175]"
-            >
-              <RotateCcw className="h-4 w-4" />
-            </button>
-          </div>
+          )}
         </div>
-      </div>
-
-      {/* Mobile navigation tab strip */}
-      <div className="mt-2 flex md:hidden items-center justify-around border-t border-[#385175] pt-1.5">
-        <button
-          id="nav-tab-mobile-home"
-          onClick={() => {
-            playClickSound();
-            onSelectTab('home');
-          }}
-          className={`flex items-center gap-1 text-xs font-mono py-1 px-1.5 ${
-            activeTab === 'home' ? 'text-amber-400 font-bold' : 'text-slate-400'
-          }`}
-        >
-          <Home className="h-3 w-3" />
-          <span>[HOME]</span>
-        </button>
-        <button
-          id="nav-tab-mobile-scenario-ops"
-          onClick={() => {
-            playClickSound();
-            onSelectTab('scenario-ops');
-          }}
-          className={`flex items-center gap-1 text-xs font-mono py-1 px-1.5 ${
-            activeTab === 'scenario-ops' ? 'text-amber-400 font-bold' : 'text-amber-400/70'
-          }`}
-        >
-          <Brain className="h-3 w-3" />
-          <span>[OPS]</span>
-        </button>
-        <button
-          onClick={() => {
-            playClickSound();
-            onSelectTab('world');
-          }}
-          className={`text-xs font-mono py-1 px-2 ${
-            activeTab === 'world' || activeTab === 'location' || activeTab === 'mission'
-              ? 'text-amber-400 font-bold'
-              : 'text-slate-400'
-          }`}
-        >
-          [WORLD]
-        </button>
-        <button
-          onClick={() => {
-            playClickSound();
-            onSelectTab('abilities');
-          }}
-          className={`text-xs font-mono py-1 px-2 ${
-            activeTab === 'abilities' ? 'text-amber-400 font-bold' : 'text-slate-400'
-          }`}
-        >
-          [ABILITIES:{unlockedAbilitiesCount}]
-        </button>
-        <button
-          onClick={() => {
-            playClickSound();
-            onSelectTab('evidence');
-          }}
-          className={`text-xs font-mono py-1 px-2 ${
-            activeTab === 'evidence' ? 'text-amber-400 font-bold' : 'text-slate-400'
-          }`}
-        >
-          [EVIDENCE:{player.evidence.length}]
-        </button>
-        <button
-          onClick={() => {
-            playClickSound();
-            onSelectTab('profile');
-          }}
-          className={`text-xs font-mono py-1 px-2 ${
-            activeTab === 'profile' ? 'text-amber-400 font-bold' : 'text-slate-400'
-          }`}
-        >
-          [DOSSIER]
-        </button>
       </div>
     </header>
   );
 };
+

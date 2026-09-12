@@ -38,43 +38,23 @@ export const NPCAvatar: React.FC<NPCAvatarProps> = ({
         transform: 'translate(-50%, -85%)',
       }}
     >
-      {/* Overhead RPG Quest Bubble & Name */}
-      <div className="absolute -top-9 left-1/2 -translate-x-1/2 whitespace-nowrap flex flex-col items-center pointer-events-none transition-all duration-150">
-        {/* RPG Quest Bubble */}
-        <div className="mb-0.5">
-          {isCompleted ? (
-            <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-emerald-950/90 border border-emerald-600 shadow-md text-emerald-300 text-[9px] font-bold font-mono">
-              <CheckCircle2 className="h-2.5 w-2.5" />
-              <span>SAVED</span>
-            </div>
-          ) : (
-            <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-amber-500 border border-amber-300 shadow-md text-slate-950 text-[10px] font-black font-mono animate-bounce">
-              <span>!</span>
-              <span className="text-[8px] font-bold">HELP</span>
-            </div>
-          )}
-        </div>
-
-        {/* Character Name Tag */}
-        <div
-          className={`px-2 py-0.5 rounded text-[9px] font-mono font-bold tracking-wide border shadow-sm transition-colors ${
-            isNearPlayer
-              ? 'bg-amber-400 text-slate-950 border-amber-300 ring-2 ring-amber-400/40'
-              : 'bg-[#0f172a]/90 text-slate-200 border-[#334155]'
-          }`}
-        >
-          {name}
-        </div>
-      </div>
-
       {/* Ground Contact Shadow */}
-      <div className="absolute left-1/2 top-[34px] -translate-x-1/2 w-7 h-2.5 bg-black/40 rounded-full blur-[1px]" />
+      <div className="absolute left-1/2 top-[36px] -translate-x-1/2 w-8 h-2.5 bg-black/40 rounded-full blur-[1px]" />
 
-      {/* 2D Vector RPG Sprite */}
-      <div className="relative w-9 h-10 animate-pulse" style={{ animationDuration: '4s' }}>
+      {/* Small RPG Quest Symbol (Optional clean icon, no text boxes) */}
+      {!isCompleted && (
+        <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 pointer-events-none z-30">
+          <div className="w-5 h-5 rounded-full bg-amber-400 border border-amber-300 shadow-md flex items-center justify-center text-slate-950 font-black text-xs animate-bounce">
+            !
+          </div>
+        </div>
+      )}
+
+      {/* 2D Vector RPG Sprite - Naturally rendered in the world */}
+      <div className="relative w-10 h-11 transition-transform duration-150">
         <svg
           viewBox="0 0 36 40"
-          className="w-9 h-10 drop-shadow-md"
+          className="w-10 h-11 drop-shadow-md"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
         >

@@ -14,6 +14,8 @@ import {
   Shield,
   Footprints,
   Terminal,
+  Sparkles,
+  Brain,
 } from 'lucide-react';
 import { PlayerState, WorldLocation, LocationId } from '../../types';
 import { Direction, WorldPosition, WorldInteractable, AreaExit, PlayableArea } from '../../types/world';
@@ -91,6 +93,25 @@ export const WorldScene: React.FC<WorldSceneProps> = ({
   const [areaTitleBanner, setAreaTitleBanner] = useState<string | null>(() => currentArea.name);
   const [transitionState, setTransitionState] = useState<TransitionState | null>(null);
   const [lockedExitAlert, setLockedExitAlert] = useState<string | null>(null);
+  const [isFirstWelcomeOpen, setIsFirstWelcomeOpen] = useState<boolean>(() => {
+    if (player.completedMissions.length === 0) {
+      try {
+        const seen = sessionStorage.getItem('cybermentor_rpg_welcome_seen');
+        return !seen;
+      } catch {
+        return true;
+      }
+    }
+    return false;
+  });
+
+  const handleDismissFirstWelcome = () => {
+    setIsFirstWelcomeOpen(false);
+    try {
+      sessionStorage.setItem('cybermentor_rpg_welcome_seen', 'true');
+    } catch {}
+    playSuccessSound();
+  };
 
   // Active keys ref for smooth 60fps movement
   const keysPressed = useRef<Set<string>>(new Set());
@@ -564,125 +585,60 @@ export const WorldScene: React.FC<WorldSceneProps> = ({
     : currentArea.unresolvedObjective;
 
   return (
-    <div id="rpg-world-viewport-container" className="relative w-full select-none">
-      {/* Top Header: Location, Area Progression Breadcrumbs, and Controls */}
-      <div className="flex flex-wrap items-center justify-between gap-2 rounded-t-xl border-2 border-b-0 border-[#385175] bg-[#16233b]/95 px-4 py-2 text-xs font-mono text-slate-200 shadow-md">
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Active Area Badge */}
-          <div className="flex items-center gap-2">
-            <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
-            <span className="font-bold text-amber-300 uppercase tracking-wider text-sm">
-              {currentArea.name}
-            </span>
-          </div>
-          <span className="text-slate-500 font-mono hidden sm:inline">•</span>
-          <span className="px-1.5 py-0.5 rounded bg-black/40 text-[10px] text-cyan-300 border border-[#2b3c58] hidden sm:inline">
-            {currentArea.areaCode}
+    <div id="rpg-world-viewport-container" className="relative w-full max-w-4xl select-none mx-auto">
+      {/* Standalone Central Game Screen with Clean Game Frame */}
+      <div
+        ref={viewportRef}
+        className="relative w-full h-[540px] sm:h-[640px] md:h-[680px] rounded-2xl sm:rounded-3xl border-4 border-[#253957] bg-[#0c1424] shadow-[0_25px_60px_rgba(0,0,0,0.8)] overflow-hidden cursor-crosshair ring-1 ring-white/10"
+        style={{ touchAction: 'none' }}
+      >
+        {/* Top-Left In-Game HUD: Simple Location Badge */}
+        <div className="absolute top-4 left-4 z-30 pointer-events-auto flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#0a121e]/85 border border-[#2b3e5c] backdrop-blur-md shadow-lg">
+          <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
+          <span className="font-bold text-slate-100 text-xs sm:text-sm tracking-wide font-mono uppercase">
+            {location.name} <span className="text-amber-400">• {currentArea.name}</span>
           </span>
         </div>
 
-        {/* Campus Sequential Area Switcher / Breadcrumbs (if on Campus) */}
-        {location.id === 'campus' && (
-          <div className="hidden lg:flex items-center gap-1 bg-black/40 px-2 py-0.5 rounded-lg border border-[#2b3c58]">
-            <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider mr-1">
-              AREAS:
-            </span>
-            {CAMPUS_AREA_SEQUENCE.map((areaId, idx) => {
-              const area = PLAYABLE_AREAS[areaId];
-              const unlocked = isAreaUnlocked(areaId, player.completedMissions);
-              const isCurrent = areaId === currentAreaId;
-              const shortNames = ['1. LIBRARY', '2. UNION', '3. ENG LAB', '4. SECOPS'];
-
-              return (
-                <button
-                  key={areaId}
-                  onClick={() => handleQuickTravel(areaId)}
-                  disabled={!unlocked}
-                  className={`flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-mono font-bold uppercase transition-all ${
-                    isCurrent
-                      ? 'bg-amber-400 text-slate-950 shadow-sm ring-1 ring-amber-300'
-                      : unlocked
-                      ? 'bg-[#1e293b] text-slate-200 hover:bg-[#334155] border border-slate-600/50'
-                      : 'bg-black/30 text-slate-600 cursor-not-allowed border border-slate-800'
-                  }`}
-                  title={unlocked ? `Travel to ${area.name}` : `Locked: Complete prior incident to unlock`}
-                >
-                  {unlocked ? (
-                    isCurrent ? (
-                      <span className="w-1.5 h-1.5 rounded-full bg-slate-950 animate-pulse" />
-                    ) : (
-                      <CheckCircle2 className="w-2.5 h-2.5 text-emerald-400" />
-                    )
-                  ) : (
-                    <Lock className="w-2.5 h-2.5 text-slate-600" />
-                  )}
-                  <span>{shortNames[idx]}</span>
-                </button>
-              );
-            })}
-          </div>
-        )}
-
-        {/* Action Buttons */}
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => {
-              playClickSound();
-              setIsForensicModalOpen(true);
-            }}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded border border-cyan-500/50 bg-cyan-950/50 hover:bg-cyan-900/60 text-cyan-300 text-[10px] font-bold uppercase transition-colors shadow-xs"
-            title="Open SecOps Forensic Sandbox Terminal"
+        {/* Top-Right In-Game HUD: Minimal Trust Indicator + Quick Tools */}
+        <div className="absolute top-4 right-4 z-30 pointer-events-auto flex items-center gap-2">
+          {/* Simple Trust Indicator */}
+          <div
+            id="trust-meter-display"
+            className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#0a121e]/85 border border-[#2b3e5c] backdrop-blur-md shadow-lg text-xs font-mono font-bold text-slate-200"
+            title="Digital Trust Score"
           >
-            <Terminal className="h-3.5 w-3.5 text-cyan-400" />
-            <span className="hidden sm:inline">Forensic Sandbox</span>
-            <span className="sm:hidden">Sandbox</span>
-          </button>
+            <span className="text-amber-400 text-sm">🛡️</span>
+            <span className="text-amber-300 font-extrabold">{player.digitalTrust}</span>
+            <span className="text-slate-400 text-[11px]">/ 100</span>
+          </div>
 
-          {onToggleTacticalView && (
-            <button
-              onClick={() => {
-                playClickSound();
-                onToggleTacticalView();
-              }}
-              className="px-2.5 py-1 rounded border border-[#3b5175] bg-[#1a2942] hover:bg-[#263a5c] text-slate-200 text-[10px] font-bold uppercase transition-colors"
-            >
-              Dossier Cards
-            </button>
-          )}
-
+          {/* Quick World Map Icon Button */}
           <button
             onClick={() => {
               playClickSound();
               onBackToWorld();
             }}
-            className="flex items-center gap-1.5 px-3 py-1 rounded border border-amber-500/50 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-[10px] font-bold uppercase transition-colors shadow-sm"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#0a121e]/85 hover:bg-[#152338] border border-[#2b3e5c] hover:border-amber-400/80 text-amber-300 text-xs font-semibold backdrop-blur-md shadow-lg transition-all cursor-pointer"
+            title="Open Sector Map"
           >
             <Compass className="h-3.5 w-3.5 text-amber-400" />
-            <span>World Map</span>
+            <span className="hidden sm:inline">MAP</span>
+          </button>
+
+          {/* Quick Sandbox Terminal Icon Button */}
+          <button
+            onClick={() => {
+              playClickSound();
+              setIsForensicModalOpen(true);
+            }}
+            className="p-1.5 rounded-full bg-[#0a121e]/85 hover:bg-[#152338] border border-[#2b3e5c] text-cyan-300 backdrop-blur-md shadow-lg transition-all cursor-pointer"
+            title="Open Forensic Sandbox Terminal"
+          >
+            <Terminal className="h-4 w-4" />
           </button>
         </div>
-      </div>
 
-      {/* Environmental Objective Ribbon (Minimalist, Scannable) */}
-      <div className="bg-[#0b121e] border-x-2 border-b-2 border-[#2b3c58] px-4 py-1 flex items-center justify-between gap-3 text-[11px] font-mono shadow-inner">
-        <div className="flex items-center gap-2 overflow-hidden">
-          <span className="h-2 w-2 rounded-full bg-amber-400 shrink-0 animate-pulse" />
-          <span className="text-slate-400 font-bold uppercase tracking-wider text-[9px] shrink-0">
-            OBJECTIVE:
-          </span>
-          <span className="text-amber-200 font-semibold truncate">{currentObjectiveText}</span>
-        </div>
-        <span className="text-[10px] text-slate-400 font-mono hidden md:inline shrink-0">
-          {location.name}
-        </span>
-      </div>
-
-      {/* Main Viewport & Camera Stage */}
-      <div
-        ref={viewportRef}
-        className="relative w-full h-[540px] sm:h-[620px] rounded-b-xl border-2 border-t-0 border-[#385175] overflow-hidden cursor-crosshair bg-[#172338] shadow-2xl"
-        style={{ touchAction: 'none' }}
-      >
         {/* Transform Camera Container */}
         <div
           id="camera-stage"
@@ -695,12 +651,13 @@ export const WorldScene: React.FC<WorldSceneProps> = ({
             backgroundColor: currentArea.theme.groundColor,
           }}
         >
-          {/* Ground Checkered Lawn Pattern */}
+          {/* Ground Subtle Checkered Lawn / Park Turf Pattern */}
           <div
-            className="absolute inset-0 pointer-events-none opacity-30"
+            className="absolute inset-0 pointer-events-none opacity-15"
             style={{
-              backgroundImage: `linear-gradient(to right, ${currentArea.theme.gridColor} 1px, transparent 1px), linear-gradient(to bottom, ${currentArea.theme.gridColor} 1px, transparent 1px)`,
-              backgroundSize: '32px 32px',
+              backgroundImage: `linear-gradient(45deg, rgba(255,255,255,0.06) 25%, transparent 25%, transparent 75%, rgba(255,255,255,0.06) 75%, rgba(255,255,255,0.06)), linear-gradient(45deg, rgba(255,255,255,0.06) 25%, transparent 25%, transparent 75%, rgba(255,255,255,0.06) 75%, rgba(255,255,255,0.06))`,
+              backgroundSize: '48px 48px',
+              backgroundPosition: '0 0, 24px 24px',
             }}
           />
 
@@ -721,51 +678,56 @@ export const WorldScene: React.FC<WorldSceneProps> = ({
             {/* 1. LIBRARY QUAD PATHWAY */}
             {currentArea.pathType === 'library-quad' && (
               <g id="pathway-library">
-                {/* Entrance Plaza Patio */}
-                <rect x="160" y="210" width="180" height="90" rx="8" fill="url(#path-tile)" stroke={currentArea.theme.pathBorder} strokeWidth="1.5" />
-                {/* Courtyard Walkway connecting to benches */}
-                <rect x="100" y="270" width="300" height="40" rx="4" fill="url(#path-tile)" stroke={currentArea.theme.pathBorder} strokeWidth="1" />
-                {/* Walkway leading East to Student Union Exit */}
-                <rect x="350" y="260" width="390" height="48" rx="4" fill="url(#path-tile)" stroke={currentArea.theme.pathBorder} strokeWidth="1.5" />
-                {/* Stepping flagstones */}
-                <circle cx="210" cy="330" r="7" fill="#ebdcc6" stroke="#b59e7f" strokeWidth="1" />
-                <circle cx="230" cy="350" r="6" fill="#ebdcc6" stroke="#b59e7f" strokeWidth="1" />
+                {/* Grand Library Entrance Courtyard */}
+                <rect x="130" y="200" width="200" height="90" rx="10" fill="url(#path-tile)" stroke={currentArea.theme.pathBorder} strokeWidth="1.5" />
+                {/* East Promenade leading across to Student Union Walkway */}
+                <rect x="180" y="265" width="570" height="70" rx="8" fill="url(#path-tile)" stroke={currentArea.theme.pathBorder} strokeWidth="1.5" />
+                {/* North branch to security bulletin & terminal alcove */}
+                <rect x="440" y="210" width="220" height="65" rx="6" fill="url(#path-tile)" stroke={currentArea.theme.pathBorder} strokeWidth="1" />
+                {/* Courtyard bench flagstones */}
+                <rect x="100" y="330" width="260" height="30" rx="4" fill="url(#path-tile)" stroke={currentArea.theme.pathBorder} strokeWidth="1" />
+                <circle cx="160" cy="380" r="8" fill="#ebdcc6" stroke="#b59e7f" strokeWidth="1" />
+                <circle cx="300" cy="380" r="8" fill="#ebdcc6" stroke="#b59e7f" strokeWidth="1" />
               </g>
             )}
 
             {/* 2. STUDENT UNION PATIO PATHWAY */}
             {currentArea.pathType === 'union-patio' && (
               <g id="pathway-union">
-                {/* West path coming from Library */}
-                <rect x="40" y="256" width="320" height="48" rx="4" fill="url(#path-tile)" stroke={currentArea.theme.pathBorder} strokeWidth="1.5" />
-                {/* Central Cafe Terrace Plaza */}
-                <rect x="260" y="210" width="260" height="150" rx="12" fill="url(#path-tile)" stroke={currentArea.theme.pathBorder} strokeWidth="2" />
-                {/* South Walkway leading toward Engineering */}
-                <rect x="366" y="350" width="48" height="160" rx="4" fill="url(#path-tile)" stroke={currentArea.theme.pathBorder} strokeWidth="1.5" />
+                {/* West boulevard coming from Library */}
+                <rect x="40" y="265" width="280" height="70" rx="8" fill="url(#path-tile)" stroke={currentArea.theme.pathBorder} strokeWidth="1.5" />
+                {/* Central Cafe Terrace & Social Plaza */}
+                <rect x="250" y="200" width="280" height="150" rx="14" fill="url(#path-tile)" stroke={currentArea.theme.pathBorder} strokeWidth="2" />
+                {/* East terrace wing to Wi-Fi node and bike racks */}
+                <rect x="510" y="215" width="140" height="65" rx="6" fill="url(#path-tile)" stroke={currentArea.theme.pathBorder} strokeWidth="1" />
+                {/* South Walkway leading down toward Engineering Quad */}
+                <rect x="355" y="340" width="70" height="170" rx="8" fill="url(#path-tile)" stroke={currentArea.theme.pathBorder} strokeWidth="1.5" />
               </g>
             )}
 
             {/* 3. ENGINEERING LAB WALKWAY */}
             {currentArea.pathType === 'eng-walkway' && (
               <g id="pathway-engineering">
-                {/* North walkway coming from Student Union */}
-                <rect x="366" y="40" width="48" height="190" rx="4" fill="url(#path-tile)" stroke={currentArea.theme.pathBorder} strokeWidth="1.5" />
-                {/* Lab Plaza in front of Engineering entrance */}
-                <rect x="230" y="220" width="320" height="80" rx="8" fill="url(#path-tile)" stroke={currentArea.theme.pathBorder} strokeWidth="1.5" />
-                {/* Breezeway leading East to SecOps */}
-                <rect x="480" y="180" width="270" height="48" rx="4" fill="url(#path-tile)" stroke={currentArea.theme.pathBorder} strokeWidth="1.5" />
+                {/* North promenade coming down from Student Union */}
+                <rect x="355" y="40" width="70" height="210" rx="8" fill="url(#path-tile)" stroke={currentArea.theme.pathBorder} strokeWidth="1.5" />
+                {/* Wide Lab Plaza in front of Room 204 entrance */}
+                <rect x="190" y="230" width="400" height="105" rx="12" fill="url(#path-tile)" stroke={currentArea.theme.pathBorder} strokeWidth="1.5" />
+                {/* Secure Breezeway leading East to SecOps Hub */}
+                <rect x="490" y="180" width="260" height="65" rx="8" fill="url(#path-tile)" stroke={currentArea.theme.pathBorder} strokeWidth="1.5" />
               </g>
             )}
 
             {/* 4. SECOPS PERIMETER PATHWAY */}
             {currentArea.pathType === 'secops-perimeter' && (
               <g id="pathway-secops">
-                {/* West corridor from Engineering */}
-                <rect x="40" y="180" width="320" height="48" rx="4" fill="url(#path-tile)" stroke={currentArea.theme.pathBorder} strokeWidth="1.5" />
-                {/* SecOps Secure Entrance Courtyard */}
-                <rect x="280" y="215" width="220" height="90" rx="8" fill="url(#path-tile)" stroke={currentArea.theme.pathBorder} strokeWidth="1.5" />
+                {/* West corridor from Engineering Lab */}
+                <rect x="40" y="180" width="280" height="65" rx="8" fill="url(#path-tile)" stroke={currentArea.theme.pathBorder} strokeWidth="1.5" />
+                {/* SecOps Secure Main Entrance Courtyard */}
+                <rect x="260" y="205" width="260" height="95" rx="10" fill="url(#path-tile)" stroke={currentArea.theme.pathBorder} strokeWidth="1.5" />
+                {/* Gateway console spur */}
+                <rect x="510" y="215" width="140" height="60" rx="6" fill="url(#path-tile)" stroke={currentArea.theme.pathBorder} strokeWidth="1" />
                 {/* Central Tactical Terminal Plaza */}
-                <rect x="180" y="380" width="420" height="70" rx="10" fill="url(#path-tile)" stroke={currentArea.theme.pathBorder} strokeWidth="1.5" />
+                <rect x="170" y="375" width="440" height="80" rx="12" fill="url(#path-tile)" stroke={currentArea.theme.pathBorder} strokeWidth="1.5" />
               </g>
             )}
 
@@ -868,12 +830,12 @@ export const WorldScene: React.FC<WorldSceneProps> = ({
         </div>
 
         {/* Floating Controls Helper (Keyboard) */}
-        <div className="hidden md:flex absolute top-3 left-3 z-30 pointer-events-none items-center gap-2 rounded-lg border border-[#3b5175] bg-[#0f172a]/90 px-3 py-1.5 text-[11px] font-mono text-slate-300 backdrop-blur-sm shadow-md">
-          <span className="text-amber-400 font-bold">WASD / ARROWS</span>
+        <div className="hidden md:flex absolute bottom-4 left-4 z-30 pointer-events-none items-center gap-2 rounded-full border border-[#2b3e5c] bg-[#0a121e]/85 px-3.5 py-1.5 text-[11px] font-mono text-slate-300 backdrop-blur-md shadow-md">
+          <span className="text-amber-400 font-bold">WASD</span>
           <span>MOVE</span>
           <span className="text-slate-500">•</span>
           <span className="text-amber-400 font-bold">[E]</span>
-          <span>INTERACT / EXIT</span>
+          <span>ACT</span>
         </div>
 
         {/* Area Entrance Title Banner (Discreet floating pill) */}
@@ -1005,6 +967,69 @@ export const WorldScene: React.FC<WorldSceneProps> = ({
       {/* Forensic Sandbox Terminal Modal */}
       {isForensicModalOpen && (
         <ForensicSandboxModal onClose={() => setIsForensicModalOpen(false)} />
+      )}
+
+      {/* First-Time Arrival AI Mentor Greeting & Objective Modal */}
+      {isFirstWelcomeOpen && (
+        <div
+          id="rpg-first-time-welcome-modal"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs animate-in fade-in duration-200"
+        >
+          <div className="relative w-full max-w-lg rounded-3xl border-2 border-cyan-500/80 bg-[#0d1626] p-6 sm:p-7 shadow-2xl space-y-4 text-left ring-1 ring-cyan-400/30">
+            {/* Header with AI Mentor Core */}
+            <div className="flex items-center gap-3 border-b border-[#1f314d] pb-3">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-cyan-400 bg-cyan-950/80 shadow-md">
+                <Brain className="h-6 w-6 text-cyan-300 animate-pulse" />
+              </div>
+              <div>
+                <div className="flex items-center gap-1.5 text-xs font-mono font-bold text-cyan-400 uppercase tracking-wide">
+                  <Sparkles className="h-3.5 w-3.5" />
+                  <span>AI MENTOR // CAMPUS ARRIVAL</span>
+                </div>
+                <div className="text-base sm:text-lg font-bold text-white font-sans">
+                  Welcome to CyberMentor.
+                </div>
+              </div>
+            </div>
+
+            {/* Mentor Dialogue */}
+            <div className="space-y-2 text-xs sm:text-sm text-slate-200 font-medium leading-relaxed">
+              <p className="text-cyan-200">
+                "Your journey starts here. Explore the campus and see what you can discover."
+              </p>
+            </div>
+
+            {/* First Objective Box */}
+            <div className="rounded-2xl border border-amber-500/40 bg-amber-950/20 p-4 space-y-1.5">
+              <div className="text-[11px] font-mono font-bold text-amber-300 uppercase tracking-wider flex items-center gap-1.5">
+                <span>🎯 FIRST TUTORIAL OBJECTIVE</span>
+              </div>
+              <p className="text-xs sm:text-sm text-slate-200 font-sans leading-snug">
+                Walk toward the <strong>Library entrance</strong> and speak with{' '}
+                <strong className="text-amber-300">Jordan Rivera</strong> (marked with an alert icon).
+                They just received an urgent message regarding financial aid and need your help
+                investigating it.
+              </p>
+            </div>
+
+            {/* Controls Reminder */}
+            <div className="rounded-xl bg-slate-900/70 border border-slate-800 p-3 text-[11px] font-mono text-slate-400 space-y-1">
+              <div className="text-slate-300 font-bold">🕹️ EXPLORATION CONTROLS</div>
+              <div>• Desktop: Use [W][A][S][D] or Arrow keys to walk. Press [E] or Space to interact.</div>
+              <div>• Touch / Click: Tap anywhere on the ground to move, or use the on-screen joystick.</div>
+            </div>
+
+            {/* Action Button */}
+            <button
+              id="dismiss-first-welcome-btn"
+              onClick={handleDismissFirstWelcome}
+              className="w-full py-3.5 px-6 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-sm sm:text-base tracking-wide uppercase shadow-lg shadow-emerald-500/25 transition-all cursor-pointer flex items-center justify-center gap-2"
+            >
+              <span>EXPLORE THE CAMPUS</span>
+              <ArrowRight className="h-5 w-5" />
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

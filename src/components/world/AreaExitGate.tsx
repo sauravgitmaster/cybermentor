@@ -43,34 +43,36 @@ export const AreaExitGate: React.FC<AreaExitGateProps> = ({
         transform: 'translate(-50%, -50%)',
       }}
     >
-      {/* Floating Overhead Interaction Pill */}
-      <div className="absolute -top-10 left-1/2 -translate-x-1/2 whitespace-nowrap pointer-events-none z-30">
-        <div
-          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-mono font-bold tracking-wider shadow-lg border backdrop-blur-sm transition-all duration-200 ${
-            isUnlocked
-              ? isNearPlayer
-                ? 'bg-amber-400 text-slate-950 border-amber-300 ring-2 ring-amber-400/50 shadow-amber-400/20'
-                : 'bg-[#0f172a]/95 text-cyan-300 border-cyan-500/50'
-              : 'bg-[#18181b]/95 text-slate-400 border-rose-900/60'
-          }`}
-        >
-          {isUnlocked ? (
-            <>
-              <span className="flex h-2 w-2 relative">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
-              </span>
-              <span>{isNearPlayer ? `[E] ${label}` : label}</span>
-              {renderDirectionIcon('h-3 w-3 shrink-0')}
-            </>
-          ) : (
-            <>
-              <Lock className="h-3 w-3 text-rose-400 shrink-0" />
-              <span className="text-rose-300/90">{name} [LOCKED]</span>
-            </>
-          )}
+      {/* Floating Overhead Interaction Pill - Cleanly shows when approached */}
+      {(isNearPlayer || !isUnlocked) && (
+        <div className="absolute -top-10 left-1/2 -translate-x-1/2 whitespace-nowrap pointer-events-none z-30 animate-in fade-in duration-150">
+          <div
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-mono font-bold tracking-wider shadow-lg border backdrop-blur-sm transition-all duration-200 ${
+              isUnlocked
+                ? isNearPlayer
+                  ? 'bg-amber-400 text-slate-950 border-amber-300 ring-2 ring-amber-400/50 shadow-amber-400/20'
+                  : 'bg-[#0f172a]/95 text-cyan-300 border-cyan-500/50'
+                : 'bg-[#18181b]/95 text-slate-400 border-rose-900/60'
+            }`}
+          >
+            {isUnlocked ? (
+              <>
+                <span className="flex h-2 w-2 relative">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                </span>
+                <span>{isNearPlayer ? `[E] ${label}` : label}</span>
+                {renderDirectionIcon('h-3 w-3 shrink-0')}
+              </>
+            ) : (
+              <>
+                <Lock className="h-3 w-3 text-rose-400 shrink-0" />
+                <span className="text-rose-300/90">{name} [LOCKED]</span>
+              </>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Physical Exit Pathway Ground Threshold */}
       <div className="relative flex flex-col items-center">

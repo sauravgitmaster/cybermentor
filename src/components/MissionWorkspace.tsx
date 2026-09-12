@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ArrowLeft,
   Users,
@@ -19,6 +19,7 @@ import {
 } from '../types';
 import { InvestigationPanel } from './InvestigationPanel';
 import { MentorDebrief } from './MentorDebrief';
+import { getNextMissionId, MISSIONS } from '../data/missions';
 import {
   playClickSound,
   playWarningSound,
@@ -35,6 +36,7 @@ interface MissionWorkspaceProps {
   onCompleteMission: (missionId: string) => void;
   onAddEvidence: (evidence: any) => void;
   onProceedNextMission?: (nextMissionId: string) => void;
+  onUnlockAchievement?: (achId: string) => void;
 }
 
 export const MissionWorkspace: React.FC<MissionWorkspaceProps> = ({
@@ -46,12 +48,14 @@ export const MissionWorkspace: React.FC<MissionWorkspaceProps> = ({
   onCompleteMission,
   onAddEvidence,
   onProceedNextMission,
+  onUnlockAchievement,
 }) => {
   const [stage, setStage] = useState<
     'briefing' | 'investigation' | 'decision' | 'consequence' | 'debrief'
   >('briefing');
 
   const [inspectedTargetIds, setInspectedTargetIds] = useState<string[]>([]);
+  const [selectedEvidenceClues, setSelectedEvidenceClues] = useState<string[]>([]);
   const [chosenDecision, setChosenDecision] = useState<DecisionOption | null>(null);
   const [mentorFeedback, setMentorFeedback] =
     useState<MentorAnalysisResponse | null>(null);
@@ -61,6 +65,20 @@ export const MissionWorkspace: React.FC<MissionWorkspaceProps> = ({
     description: string;
     command: string;
   } | null>(null);
+
+  // Cleanly reset workspace state whenever mission switches
+  useEffect(() => {
+    setStage('briefing');
+    setInspectedTargetIds([]);
+    setSelectedEvidenceClues([]);
+    setChosenDecision(null);
+    setMentorFeedback(null);
+    setIsLoadingFeedback(false);
+    setUnlockedAbilityData(null);
+  }, [mission.id]);
+
+  const nextMissionId = getNextMissionId(mission.id, player.completedMissions);
+  const nextMission = nextMissionId ? MISSIONS[nextMissionId] : null;
 
   const handleTargetInspected = (target: InspectableTarget) => {
     if (!inspectedTargetIds.includes(target.id)) {
@@ -74,6 +92,13 @@ export const MissionWorkspace: React.FC<MissionWorkspaceProps> = ({
         });
       }
     }
+  };
+
+  const toggleEvidenceClue = (clueId: string) => {
+    playClickSound();
+    setSelectedEvidenceClues((prev) =>
+      prev.includes(clueId) ? prev.filter((id) => id !== clueId) : [...prev, clueId]
+    );
   };
 
   const handleSelectDecision = async (decision: DecisionOption) => {
@@ -92,6 +117,16 @@ export const MissionWorkspace: React.FC<MissionWorkspaceProps> = ({
       decision.trustChange,
       `${mission.title}: ${decision.label.slice(0, 48)}...`
     );
+
+    // Evidence Expert Bonus: if defensive choice AND operative selected corroborating clues
+    let evidenceBonusAwarded = false;
+    if (decision.isOptimal && selectedEvidenceClues.length > 0) {
+      evidenceBonusAwarded = true;
+      onRecordTrustChange(5, `Forensic Corroboration Bonus: ${selectedEvidenceClues.length} indicators cited`);
+      if (onUnlockAchievement) {
+        onUnlockAchievement('ach-evidence-expert');
+      }
+    }
 
     // If defensive/optimal, unlock reward ability
     if (decision.isOptimal && mission.rewardAbility) {
@@ -120,11 +155,14 @@ export const MissionWorkspace: React.FC<MissionWorkspaceProps> = ({
           missionTitle: mission.title,
           location: mission.locationId,
           evidenceCollected: inspectedTargetIds,
+          supportingEvidenceSelected: selectedEvidenceClues,
+          evidenceBonusAwarded,
           chosenAction: decision,
           isCorrect: decision.isOptimal,
           trustChange: decision.trustChange,
-          playerTrust: player.digitalTrust + decision.trustChange,
+          playerTrust: player.digitalTrust + decision.trustChange + (evidenceBonusAwarded ? 5 : 0),
           playerLevel: player.level,
+          skillProfile: player.skillProfile,
         }),
       });
 
@@ -146,6 +184,9 @@ export const MissionWorkspace: React.FC<MissionWorkspaceProps> = ({
         mentorVoice: decision.isOptimal
           ? 'Sharp eye. Panic was their weapon; patience and verification was yours.'
           : 'A painful lesson, but safe in our sandbox. Urgency is the attacker\'s best disguise.',
+        personalizedPattern: evidenceBonusAwarded
+          ? `You cited ${selectedEvidenceClues.length} concrete technical indicator${selectedEvidenceClues.length > 1 ? 's' : ''}. Grounding decisions in documented forensics is the core of effective cyber defense.`
+          : 'Notice whether artificial urgency influenced your reaction. Always pause to examine the file extension and sender domain.',
         realWorldDefense:
           'Never verify credentials through links sent in unexpected emails; navigate independently to the verified organization portal.',
         adaptiveRecommendation: 'Proceed to the next perimeter investigation.',
@@ -293,29 +334,62 @@ export const MissionWorkspace: React.FC<MissionWorkspaceProps> = ({
               before choosing your response.
             </p>
 
-            {/* Collected Evidence Summary Review */}
-            <div className="rounded-lg border border-[#1b2230] bg-[#090c12] p-4 mb-6">
-              <div className="text-[11px] font-mono text-slate-400 uppercase mb-2">
-                Documented Evidence in Hand ({inspectedTargetIds.length})
+            {/* Evidence-Based Corroboration: What evidence supports your decision? */}
+            <div className="rounded-xl border border-cyan-800/60 bg-[#09111e] p-4 mb-6">
+              <div className="flex items-center justify-between gap-2 mb-1.5">
+                <div className="text-xs font-mono font-bold text-cyan-300 uppercase tracking-wider flex items-center gap-1.5">
+                  <CheckCircle2 className="h-4 w-4 text-cyan-400" />
+                  <span>WHAT EVIDENCE SUPPORTS YOUR DECISION? (CORROBORATION)</span>
+                </div>
+                {selectedEvidenceClues.length > 0 && (
+                  <span className="text-[10px] font-mono text-emerald-400 bg-emerald-950/60 border border-emerald-800/80 px-2 py-0.5 rounded">
+                    +5 Trust Forensic Bonus Active
+                  </span>
+                )}
               </div>
-              {inspectedTargetIds.length === 0 ? (
-                <div className="text-xs text-amber-400 italic">
-                  No technical indicators documented. Making a decision without investigation carries high risk of compromise.
+              <p className="text-xs text-slate-300 mb-3 font-sans leading-relaxed">
+                Check the specific technical indicators and red flags you identified that justify your choice:
+              </p>
+
+              {mission.investigationWorkspace.targets.length === 0 ? (
+                <div className="text-xs text-slate-500 font-mono italic">
+                  No explicit targets in this perimeter.
                 </div>
               ) : (
-                <div className="flex flex-wrap gap-2">
-                  {inspectedTargetIds.map((id) => {
-                    const target = mission.investigationWorkspace.targets.find(
-                      (t) => t.id === id
-                    );
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {mission.investigationWorkspace.targets.map((target) => {
+                    const isChecked = selectedEvidenceClues.includes(target.id);
+                    const wasInspected = inspectedTargetIds.includes(target.id);
                     return (
-                      <span
-                        key={id}
-                        className="rounded bg-[#121926] px-2.5 py-1 text-[11px] font-mono text-cyan-300 border border-cyan-900/40 flex items-center gap-1.5"
+                      <button
+                        type="button"
+                        key={target.id}
+                        id={`evidence-check-${target.id}`}
+                        onClick={() => toggleEvidenceClue(target.id)}
+                        className={`text-left rounded-lg p-2.5 border transition-all text-xs font-mono flex items-start gap-2.5 cursor-pointer ${
+                          isChecked
+                            ? 'border-cyan-400 bg-cyan-950/50 text-cyan-200'
+                            : wasInspected
+                            ? 'border-slate-700/80 bg-[#0d1522] text-slate-300 hover:border-slate-500'
+                            : 'border-slate-800 bg-slate-900/40 text-slate-500'
+                        }`}
                       >
-                        <CheckCircle2 className="h-3 w-3 text-emerald-400" />
-                        <span>{target?.label || id}</span>
-                      </span>
+                        <div
+                          className={`h-4 w-4 rounded border flex items-center justify-center shrink-0 mt-0.5 ${
+                            isChecked
+                              ? 'border-cyan-400 bg-cyan-500 text-slate-950'
+                              : 'border-slate-600 bg-slate-800'
+                          }`}
+                        >
+                          {isChecked && <CheckCircle2 className="h-3 w-3 stroke-[3]" />}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-semibold truncate">{target.label}</div>
+                          <div className="text-[10px] text-slate-400 line-clamp-1">
+                            {target.revealedDetail.evidenceYielded?.title || target.hint}
+                          </div>
+                        </div>
+                      </button>
                     );
                   })}
                 </div>
@@ -436,10 +510,11 @@ export const MissionWorkspace: React.FC<MissionWorkspaceProps> = ({
           mentorFeedback={mentorFeedback}
           isLoadingFeedback={isLoadingFeedback}
           unlockedAbility={unlockedAbilityData}
+          nextMissionCode={nextMission?.code}
           onReturnToWorld={onExitMission}
           onProceedNextMission={
-            onProceedNextMission
-              ? () => onProceedNextMission('mission-02-usb')
+            nextMissionId && onProceedNextMission
+              ? () => onProceedNextMission(nextMissionId)
               : undefined
           }
         />

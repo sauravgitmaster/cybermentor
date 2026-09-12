@@ -1165,4 +1165,286 @@ export const SCENARIOS: Scenario[] = [
       },
     },
   },
+  // 09 — Open Internet: The Unsolicited Recruiter & Malicious Repo Task
+  {
+    id: 'scenario-09',
+    number: 9,
+    code: 'OPS-09',
+    title: 'The Fake Tech Recruiter & Malicious Repo',
+    category: 'social-engineering',
+    categoryLabel: 'Open Internet — Fake Job Offers & Malware Droppers',
+    difficulty: 'Level 4 — Respond',
+    environment: 'office',
+    environmentTitle: 'Open Internet // Remote Career Outreach & Chat',
+    context: 'You receive an unsolicited direct message on LinkedIn and Telegram offering a high-paying junior remote developer role.',
+    situation:
+      'A recruiter named "Elena Rostova" claims to represent a fast-growing Web3 AI startup. She offers $75/hr and asks you to clone a private test repository from an external git link and run `npm install && npm test` to complete a 15-minute coding evaluation.',
+    participant: {
+      name: 'Kai Chen',
+      role: 'Fellow Student & Job Seeker',
+      avatarType: 'student-casual',
+    },
+    dialogue: [
+      'Hey, Elena just sent me the exact same test assignment on Telegram!',
+      'She said if we get the unit tests passing by tonight, we get an immediate interview stipend.',
+      'Should we just run the npm test script on our dev laptops to see what the challenge looks like?',
+    ],
+    artifact: {
+      type: 'chat-message',
+      title: 'Recruiter Direct Message & Repo Dispatch',
+      subtitle: 'Platform: Telegram Messenger v10.4',
+      metadata: {
+        Sender: 'Elena Rostova (@ElenaRecruit_Talent)',
+        Handle: 'Verified Startup Talent Specialist',
+        Package: 'test-challenge-v2.zip / git.smartcontract-eval.org/task',
+        Instruction: 'Run: npm install && npm run eval',
+      },
+      contentPreview:
+        'Hi! We reviewed your profile and love your background. We want to expedite your hiring process with a quick 15-minute code review test.\n\nClone our repo: https://git.smartcontract-eval.org/developer-test.git\nExtract and execute: npm install\n\nNote: Please run on your primary machine to test your local Node environment.',
+      clueCallout:
+        'Inspecting package.json in the zip reveals a "postinstall" script: "node ./scripts/check-env.js". That script secretly scans ~/.aws/credentials, browser cookie databases, and Discord tokens, exfiltrating them to an unlisted IP.',
+      tags: ['Fake Job Scam', 'Malicious npm Postinstall', 'Credential Infostealer'],
+    },
+    options: [
+      {
+        id: 'A',
+        label: 'Clone the repository and immediately run npm install and npm test as instructed.',
+        description: 'Start the coding test right away on your computer so you do not lose the opportunity.',
+        classification: 'dangerous',
+        riskAssessment: 'HIGH',
+        consequence:
+          'The malicious npm postinstall script automatically executes during install, silently stealing your saved browser passwords, GitHub session cookies, and SSH keys.',
+        clueContext:
+          'You ran unverified code from an unknown stranger without inspecting package scripts or running in a sandboxed disposable environment.',
+        saferAction: 'Inspect package.json and verify the recruiter identity independently through official company channels.',
+      },
+      {
+        id: 'B',
+        label: 'Inspect the package.json and test scripts in an isolated text viewer before running anything.',
+        description:
+          'Open the files in a plain text editor without installing dependencies to inspect package.json scripts and dependencies for obfuscated code.',
+        classification: 'secure',
+        riskAssessment: 'LOW',
+        consequence:
+          'You discover an obfuscated postinstall script designed to steal browser tokens and Discord sessions. You alert Kai and report the account to LinkedIn/Telegram security.',
+        clueContext:
+          'You applied Zero Trust to external code: never run npm install on untrusted repositories without inspecting postinstall hooks.',
+        saferAction: 'Always examine package.json scripts or run tests inside containerized disposable sandboxes.',
+      },
+      {
+        id: 'C',
+        label: 'Ask the recruiter to send the test questions as plain text or PDF instead.',
+        description: 'Message the recruiter asking if the challenge can be completed without downloading third-party repositories.',
+        classification: 'risky',
+        riskAssessment: 'MEDIUM',
+        consequence:
+          'The recruiter sends a malicious PDF weaponized with an embedded exploit link, keeping the attack active while Kai proceeds to download the infected zip.',
+        clueContext:
+          'Engaging with an obvious threat actor without reporting or alerting peers leaves others vulnerable.',
+        saferAction: 'Cease communication, report the account, and warn peers who received the solicitation.',
+      },
+      {
+        id: 'D',
+        label: 'Delete the message and block the recruiter without investigating or warning Kai.',
+        description: 'Ignore the offer completely and close your Telegram chat.',
+        classification: 'risky',
+        riskAssessment: 'MEDIUM',
+        consequence:
+          'You keep your machine safe, but Kai executes the payload on his laptop, resulting in complete credential exfiltration.',
+        clueContext:
+          'Defensive security is community-oriented. Reporting and warning classmates prevents widespread compromise.',
+        saferAction: 'Warn Kai and report the recruiter profile to platform moderators.',
+      },
+    ],
+    bestOptionId: 'B',
+    securityPrinciple: 'Never execute npm install or untrusted binaries from unsolicited recruiters. Inspect package scripts and isolate external code in throwaway environments.',
+    learningObjective: 'Recognize fake job recruiting scams that weaponize npm postinstall hooks to deploy infostealers.',
+    deterministicFeedback: {
+      A: {
+        mentorVoice: 'A devastating mistake, but an all-too-common trap in modern tech recruiting scams.',
+        whyExplanation:
+          'Running `npm install` automatically triggers any defined "preinstall" or "postinstall" shell hooks with full system permissions.',
+        realisticOutcome:
+          'Your machine was compromised by an infostealer payload, exfiltrating personal passwords and crypto wallet tokens.',
+        clueInsight:
+          'The fake company had no verified physical headquarters and contacted you exclusively via unverified messaging channels.',
+        saferAction: 'Always view raw code in an isolated text editor or sandbox before installing dependencies.',
+        principle: 'Untrusted repositories must never execute on primary workstations.',
+      },
+      B: {
+        mentorVoice: 'Flawless forensic judgment. You caught a real-world nation-state / criminal infostealer vector.',
+        whyExplanation:
+          'By inspecting the manifest before running installation hooks, you uncovered the malicious postinstall script without exposing your operating system.',
+        realisticOutcome:
+          'You protected your developer credentials, saved Kai from financial theft, and exposed a fraudulent recruiting ring.',
+        clueInsight:
+          'Legitimate companies interview candidates before sending coding assignments and use established platforms like HackerRank or LeetCode.',
+        saferAction: 'Run unknown coding evaluations only in ephemeral cloud containers or sandbox virtual machines.',
+        principle: 'Enforce code inspection before dependency resolution.',
+      },
+      C: {
+        mentorVoice: 'Cautious instinct, but continuing to negotiate with an attacker prolongs the risk.',
+        whyExplanation:
+          'Scammers adapt quickly and will redirect you to phishing portals or weaponized document attachments.',
+        realisticOutcome:
+          'The scammer shifted to a fake PDF invoice while your classmate fell victim to the original zip.',
+        clueInsight:
+          'The primary red flag was the unsolicited high-salary offer with immediate test requirements.',
+        saferAction: 'Report and terminate communication when indicators of malicious code are detected.',
+        principle: 'Do not negotiate with untrusted threat actors.',
+      },
+      D: {
+        mentorVoice: 'Self-preservation succeeded, but collective defense failed.',
+        whyExplanation:
+          'Blocking the user kept you safe, but your peer who was actively asking for advice suffered complete credential theft.',
+        realisticOutcome:
+          'Kai lost his cloud accounts because no warning was issued.',
+        clueInsight:
+          'Classmates sharing job opportunities are prime targets for targeted recruitment campaigns.',
+        saferAction: 'Share threat intelligence with peers when attacks target shared student networks.',
+        principle: 'Cybersecurity is a collective defense ecosystem.',
+      },
+    },
+  },
+  // 10 — Open Internet: The Tampered Parking Meter & Kiosk Quishing Attack
+  {
+    id: 'scenario-10',
+    number: 10,
+    code: 'OPS-10',
+    title: 'The Parking Meter QR Sticker (Quishing)',
+    category: 'qr',
+    categoryLabel: 'Open Internet — Physical Kiosk Tampering & QR Phishing',
+    difficulty: 'Level 3 — Decide',
+    environment: 'quad',
+    environmentTitle: 'Open Internet // Downtown Curbside Parking Kiosk',
+    context: 'You are parking downtown near the digital arts district before a team meetup.',
+    situation:
+      'The parking meter display screen has a sticker affixed directly over the coin slot reading: "METER OFFLINE: Pay with Mobile CityPass. Scan QR code below for instant parking validation."',
+    participant: {
+      name: 'Maya Lin',
+      role: 'Student Driver & Friend',
+      avatarType: 'student-casual',
+    },
+    dialogue: [
+      'Look at this sticker right over the card reader!',
+      'It says the card slot is broken, but we can pay 3 dollars on our phones by scanning this code.',
+      'Let’s just scan it real quick so we don’t get a 50-dollar parking ticket!',
+    ],
+    artifact: {
+      type: 'qr-poster',
+      title: 'Adhesive Sticker on Physical Meter',
+      subtitle: 'Location: City Meter #4092-B',
+      metadata: {
+        Surface: 'Vinyl adhesive label pasted on top of brushed metal housing',
+        Header: 'OFFICIAL CITY PARKING VALIDATION',
+        EncodedURL: 'https://city-parking-pay99.top/kiosk?id=4092',
+        RequestedFields: 'Credit Card Number, Expiration, CVV, Phone, Social Security Number',
+      },
+      contentPreview:
+        '[QR MATRIX CODE]\n\n"SCAN TO AVOID PARKING VIOLATIONS"\nDestination: https://city-parking-pay99.top/kiosk?id=4092\n\nRequires full billing profile and credit card input.',
+      clueCallout:
+        'The sticker is visibly raised on the edge and peeling slightly. The URL uses a suspicious .top top-level domain instead of the official municipal portal (.gov). It also requests an SSN for a 3-dollar parking fee!',
+      tags: ['Quishing', 'Physical Tampering', 'Over-Permissioning'],
+    },
+    options: [
+      {
+        id: 'A',
+        label: 'Scan the QR code and enter payment details on the mobile page to avoid a parking ticket.',
+        description: 'Complete the payment quickly on the browser page so your parking spot is registered.',
+        classification: 'dangerous',
+        riskAssessment: 'HIGH',
+        consequence:
+          'Your credit card information and personal identity details are captured by an offshore scam ring, triggering fraudulent charges within minutes.',
+        clueContext:
+          'You overlooked the suspicious .top domain, the physical sticker overlay, and the absurd request for a Social Security Number for parking.',
+        saferAction: 'Never input sensitive banking details into URLs from physical stickers without verifying official city apps.',
+      },
+      {
+        id: 'B',
+        label: 'Inspect the sticker edge, examine the URL destination, and use the official city parking app instead.',
+        description:
+          'Point out the vinyl sticker overlay to Maya, verify the fake .top domain, navigate independently to the city parking app or call the number on the metal plate.',
+        classification: 'secure',
+        riskAssessment: 'LOW',
+        consequence:
+          'You avoid financial fraud, report the tampered meter to the parking authority, and pay legitimately using the official municipal mobile app.',
+        clueContext:
+          'You identified physical substrate tampering (sticker overlay) and domain spoofing (unauthorized .top domain).',
+        saferAction: 'Inspect physical media for overlays and independently type verified municipal URLs.',
+      },
+      {
+        id: 'C',
+        label: 'Peel off the sticker and throw it away, then leave your car parked without paying.',
+        description: 'Remove the fake sticker from the meter and assume parking is free since the meter is defective.',
+        classification: 'risky',
+        riskAssessment: 'MEDIUM',
+        consequence:
+          'You prevented other drivers from scanning the code, but you returned to your car to find a $65 parking violation ticket on your windshield.',
+        clueContext:
+          'Removing physical evidence does not pay for parking; parking enforcement does not honor handwritten excuses.',
+        saferAction: 'Pay through the verified municipal app and report the tampering to parking enforcement.',
+      },
+      {
+        id: 'D',
+        label: 'Drive to another parking spot several blocks away without reporting the fake code.',
+        description: 'Abandon the spot to avoid dealing with the fake meter.',
+        classification: 'risky',
+        riskAssessment: 'MEDIUM',
+        consequence:
+          'You avoid the scam, but the next driver who parks in the stall scans the code and has their credit card stolen.',
+        clueContext:
+          'Failing to alert parking enforcement allows the physical attack vector to persist against other community members.',
+        saferAction: 'Report the scam sticker to the city transit hotline so maintenance can remove it.',
+      },
+    ],
+    bestOptionId: 'B',
+    securityPrinciple: 'Physical QR codes are easily overwritten by adhesive stickers. Always verify the domain suffix, check for tactile overlays, and prefer official bookmarked apps.',
+    learningObjective: 'Identify physical Quishing attacks on public kiosks, parking meters, and scooters.',
+    deterministicFeedback: {
+      A: {
+        mentorVoice: 'A costly scan. The attacker turned your fear of a parking fine against you.',
+        whyExplanation:
+          'Anyone with a $20 sticker printer can paste a QR code over a parking meter, gas pump, or rental scooter.',
+        realisticOutcome:
+          'Credit card skimmed, identity data harvested, and unauthorized recurring charges applied.',
+        clueInsight:
+          'Municipal governments never use cheap third-level domains (.top) or ask for SSNs for parking transactions.',
+        saferAction: 'Always use bookmarked official transit apps or call the number stamped into the metal housing.',
+        principle: 'Physical QR codes have zero inherent integrity.',
+      },
+      B: {
+        mentorVoice: 'Masterful situational vigilance. You connected physical reality to digital risk.',
+        whyExplanation:
+          'You checked the physical layer (sticker overlay) and the digital layer (domain authority), avoiding a double trap.',
+        realisticOutcome:
+          'Protected your finances and prompted municipal authorities to sweep the street for rogue stickers.',
+        clueInsight:
+          'Legitimate parking meters embed screens or display codes behind tamper-resistant polycarbonate glass.',
+        saferAction: 'Inspect physical barcodes for peeling edges and check URL domain authenticity before paying.',
+        principle: 'Verify physical substrate and digital domain before authorizing payments.',
+      },
+      C: {
+        mentorVoice: 'Public-spirited, but expensive for your own wallet.',
+        whyExplanation:
+          'Removing the scam protected the public, but parking officers enforce payment regardless of broken meters.',
+        realisticOutcome:
+          'A legitimate parking citation was issued because no valid parking session was initiated.',
+        clueInsight:
+          'Legitimate payment options almost always exist via official phone numbers or official city apps.',
+        saferAction: 'Use the official app or find another meter, while notifying parking enforcement.',
+        principle: 'Public defense must be paired with operational compliance.',
+      },
+      D: {
+        mentorVoice: 'You stayed safe, but left the trap armed for the next victim.',
+        whyExplanation:
+          'Physical scams rely on people walking away without reporting, allowing dozens of drivers to get compromised.',
+        realisticOutcome:
+          'Another student fell victim to the fake portal ten minutes later.',
+        clueInsight:
+          'A quick 30-second call to the number printed on the meter takes the trap down.',
+        saferAction: 'Report physical tampering to kiosk operators immediately.',
+        principle: 'Prompt reporting decommissions active threats.',
+      },
+    },
+  },
 ];
