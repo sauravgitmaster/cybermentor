@@ -35,6 +35,7 @@ import { MobileControls } from './MobileControls';
 import { MentorUplinkModal } from './MentorUplinkModal';
 import { DialogueBox } from './DialogueBox';
 import { ForensicSandboxModal } from '../ForensicSandboxModal';
+import { AudioVoiceControl } from '../AudioVoiceControl';
 import { playClickSound, playInspectSound, playSuccessSound } from '../../utils/audio';
 import { useAdaptiveScreen } from '../../hooks/useAdaptiveScreen';
 
@@ -613,6 +614,38 @@ export const WorldScene: React.FC<WorldSceneProps> = ({
     }
   }
 
+  // Current unobtrusive RPG objective derived from progression
+  const currentObjective = (() => {
+    if (player.completedMissions.length === 0) {
+      return {
+        title: 'Find the student near the library who received a suspicious message.',
+        isComplete: false,
+      };
+    }
+    if (!player.completedMissions.includes('mission-02-usb')) {
+      return {
+        title: 'Investigate Marcus Vance in Engineering Lab regarding the rogue USB.',
+        isComplete: false,
+      };
+    }
+    if (!player.completedMissions.includes('mission-03-wifi')) {
+      return {
+        title: 'Assist Elena Rostova at Student Union with public Wi-Fi security.',
+        isComplete: false,
+      };
+    }
+    if (!player.completedMissions.includes('mission-04-qr-scam')) {
+      return {
+        title: 'Report to Officer Vance at SecOps regarding spoofed QR codes.',
+        isComplete: false,
+      };
+    }
+    return {
+      title: 'All primary campus sectors secured! Review your Dossier or run Scenario Ops.',
+      isComplete: true,
+    };
+  })();
+
   return (
     <div id="rpg-world-viewport-container" className={`relative w-full ${containerMaxW} select-none mx-auto`}>
       {/* Standalone Central Game Screen with Clean Game Frame */}
@@ -627,6 +660,22 @@ export const WorldScene: React.FC<WorldSceneProps> = ({
           <span className="font-bold text-slate-100 text-[11px] sm:text-xs md:text-sm tracking-wide font-mono uppercase truncate max-w-[130px] xs:max-w-[200px] sm:max-w-none">
             {location.name} <span className="text-amber-400">• {currentArea.name}</span>
           </span>
+        </div>
+
+        {/* Current Objective Floating Pill (Compact, Unobtrusive) */}
+        <div
+          id="rpg-current-objective-hud"
+          className="absolute top-11 sm:top-14 left-2.5 sm:left-4 z-30 pointer-events-auto max-w-[260px] xs:max-w-[320px] sm:max-w-[400px] px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl bg-[#09111e]/90 border border-amber-500/40 backdrop-blur-md shadow-lg flex items-center gap-2 text-left animate-in fade-in duration-300"
+        >
+          <span className="text-amber-400 text-xs shrink-0">🎯</span>
+          <div className="min-w-0 flex-1">
+            <div className="text-[9px] font-mono font-bold text-amber-300 uppercase tracking-wider">
+              CURRENT OBJECTIVE
+            </div>
+            <div className="text-[11px] sm:text-xs text-slate-100 font-medium truncate">
+              {currentObjective.title}
+            </div>
+          </div>
         </div>
 
         {/* Top-Right In-Game HUD: Minimal Trust Indicator + Quick Tools */}
@@ -1006,38 +1055,45 @@ export const WorldScene: React.FC<WorldSceneProps> = ({
         >
           <div className="relative w-full max-w-lg rounded-3xl border-2 border-cyan-500/80 bg-[#0d1626] p-6 sm:p-7 shadow-2xl space-y-4 text-left ring-1 ring-cyan-400/30">
             {/* Header with AI Mentor Core */}
-            <div className="flex items-center gap-3 border-b border-[#1f314d] pb-3">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-cyan-400 bg-cyan-950/80 shadow-md">
-                <Brain className="h-6 w-6 text-cyan-300 animate-pulse" />
-              </div>
-              <div>
-                <div className="flex items-center gap-1.5 text-xs font-mono font-bold text-cyan-400 uppercase tracking-wide">
-                  <Sparkles className="h-3.5 w-3.5" />
-                  <span>AI MENTOR // CAMPUS ARRIVAL</span>
+            <div className="flex items-center justify-between border-b border-[#1f314d] pb-3">
+              <div className="flex items-center gap-3">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-cyan-400 bg-cyan-950/80 shadow-md">
+                  <Brain className="h-6 w-6 text-cyan-300 animate-pulse" />
                 </div>
-                <div className="text-base sm:text-lg font-bold text-white font-sans">
-                  Welcome to CyberMentor.
+                <div>
+                  <div className="flex items-center gap-1.5 text-xs font-mono font-bold text-cyan-400 uppercase tracking-wide">
+                    <Sparkles className="h-3.5 w-3.5" />
+                    <span>AI MENTOR</span>
+                  </div>
+                  <div className="text-base sm:text-lg font-bold text-white font-sans">
+                    Welcome to CyberMentor.
+                  </div>
                 </div>
               </div>
+
+              <AudioVoiceControl
+                textToSpeak="Welcome to CyberMentor. Your journey starts here. Someone on campus may have encountered a suspicious message. Let's investigate."
+                label="Listen"
+                compact={false}
+              />
             </div>
 
             {/* Mentor Dialogue */}
-            <div className="space-y-2 text-xs sm:text-sm text-slate-200 font-medium leading-relaxed">
+            <div className="space-y-2 text-sm sm:text-base text-slate-100 font-medium leading-relaxed">
+              <p>"Welcome to CyberMentor."</p>
+              <p>"Your journey starts here."</p>
               <p className="text-cyan-200">
-                "Your journey starts here. Explore the campus and see what you can discover."
+                "Someone on campus may have encountered a suspicious message. Let's investigate."
               </p>
             </div>
 
             {/* First Objective Box */}
             <div className="rounded-2xl border border-amber-500/40 bg-amber-950/20 p-4 space-y-1.5">
               <div className="text-[11px] font-mono font-bold text-amber-300 uppercase tracking-wider flex items-center gap-1.5">
-                <span>🎯 FIRST TUTORIAL OBJECTIVE</span>
+                <span>🎯 CURRENT OBJECTIVE</span>
               </div>
               <p className="text-xs sm:text-sm text-slate-200 font-sans leading-snug">
-                Walk toward the <strong>Library entrance</strong> and speak with{' '}
-                <strong className="text-amber-300">Jordan Rivera</strong> (marked with an alert icon).
-                They just received an urgent message regarding financial aid and need your help
-                investigating it.
+                Find the student who reported the suspicious message (near the Library entrance).
               </p>
             </div>
 
@@ -1054,7 +1110,7 @@ export const WorldScene: React.FC<WorldSceneProps> = ({
               onClick={handleDismissFirstWelcome}
               className="w-full py-3.5 px-6 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-sm sm:text-base tracking-wide uppercase shadow-lg shadow-emerald-500/25 transition-all cursor-pointer flex items-center justify-center gap-2"
             >
-              <span>EXPLORE THE CAMPUS</span>
+              <span>EXPLORE</span>
               <ArrowRight className="h-5 w-5" />
             </button>
           </div>

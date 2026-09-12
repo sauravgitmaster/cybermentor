@@ -306,9 +306,13 @@ export default function App() {
           <LandingIntro
             player={player}
             nextMission={currentMission}
-            onStartAdventure={() => {
-              // Enter Campus sector 2D exploration world
-              handleSelectLocation('campus');
+            onStartAdventure={(firstMissionId?: string) => {
+              const chosenMissionId = firstMissionId || activeMissionId || 'mission-01-email';
+              const targetMission = MISSIONS[chosenMissionId] || MISSIONS['mission-01-email'];
+              setActiveMissionId(chosenMissionId);
+              setSelectedLocationId(targetMission.locationId);
+              setPlayer((prev) => ({ ...prev, currentLocationId: targetMission.locationId }));
+              setCurrentTab('location');
             }}
             onOpenScenarioOps={() => setCurrentTab('scenario-ops')}
             onOpenHowItWorks={() => setIsHelpOpen(true)}

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Play, ArrowRight, X, CheckCircle2, AlertTriangle, ShieldCheck } from 'lucide-react';
 import { NPCDialogue } from '../../data/dialogues';
 import { playClickSound, playInspectSound } from '../../utils/audio';
+import { AudioVoiceControl } from '../AudioVoiceControl';
 
 interface DialogueBoxProps {
   dialogue: NPCDialogue;
@@ -205,19 +206,27 @@ export const DialogueBox: React.FC<DialogueBoxProps> = ({
           {/* Dialogue Content */}
           <div className="flex-1 space-y-2.5 min-w-0 pr-8">
             {/* Header: Name and Role */}
-            <div className="flex flex-wrap items-center gap-2.5">
-              <span className="font-bold text-amber-300 text-base sm:text-lg tracking-wide font-mono">
-                {dialogue.name}
-              </span>
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#1a283e] text-cyan-300 border border-[#2b4163]">
-                {dialogue.role}
-              </span>
-              {isCompleted && (
-                <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-950/90 text-emerald-300 border border-emerald-700/60 flex items-center gap-1.5">
-                  <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" />
-                  SAFE
+            <div className="flex flex-wrap items-center justify-between gap-2.5">
+              <div className="flex flex-wrap items-center gap-2.5">
+                <span className="font-bold text-amber-300 text-base sm:text-lg tracking-wide font-mono">
+                  {dialogue.name}
                 </span>
-              )}
+                <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#1a283e] text-cyan-300 border border-[#2b4163]">
+                  {dialogue.role}
+                </span>
+                {isCompleted && (
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-950/90 text-emerald-300 border border-emerald-700/60 flex items-center gap-1.5">
+                    <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" />
+                    SAFE
+                  </span>
+                )}
+              </div>
+
+              {/* TTS Voice Control */}
+              <AudioVoiceControl
+                textToSpeak={`${speechLines[speechIndex]}`}
+                compact={true}
+              />
             </div>
 
             {/* Spoken Text - Highly readable & clean */}

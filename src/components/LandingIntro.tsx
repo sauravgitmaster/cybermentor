@@ -33,6 +33,7 @@ import {
   playInspectSound,
 } from '../utils/audio';
 import { useAdaptiveScreen } from '../hooks/useAdaptiveScreen';
+import { AudioVoiceControl } from './AudioVoiceControl';
 
 // Miniature 2D RPG World Diorama (Adventure Beginning Feeling)
 const RpgDioramaPreview: React.FC<{ isCompact?: boolean }> = ({ isCompact = false }) => {
@@ -115,7 +116,7 @@ const RpgDioramaPreview: React.FC<{ isCompact?: boolean }> = ({ isCompact = fals
 interface LandingIntroProps {
   player: PlayerState;
   nextMission?: MissionData;
-  onStartAdventure: () => void;
+  onStartAdventure: (firstMissionId?: string) => void;
   onOpenScenarioOps?: () => void;
   onOpenHowItWorks: () => void;
   onOpenSkillCheck?: () => void;
@@ -126,7 +127,7 @@ interface LandingIntroProps {
   onResetProgress?: () => void;
 }
 
-type OnboardingStep = 'intro' | 'skill-check' | 'profile' | 'mentor-intro';
+type OnboardingStep = 'intro' | 'meet-mentor' | 'skill-check' | 'profile';
 
 export const LandingIntro: React.FC<LandingIntroProps> = ({
   player,
@@ -151,7 +152,7 @@ export const LandingIntro: React.FC<LandingIntroProps> = ({
   // If player has already completed skill check, they are a returning user!
   const isReturningUser = Boolean(player.skillCheckCompleted);
 
-  // New User Onboarding steps: intro -> skill-check -> profile -> mentor-intro
+  // New User Onboarding steps: intro -> meet-mentor -> skill-check -> profile -> enter game
   const [onboardingStep, setOnboardingStep] = useState<OnboardingStep>('intro');
 
   // Skill Check Interactive State
@@ -181,6 +182,11 @@ export const LandingIntro: React.FC<LandingIntroProps> = ({
   };
 
   const handleStartJourneyClick = () => {
+    playClickSound();
+    setOnboardingStep('meet-mentor');
+  };
+
+  const handleBeginSkillCheck = () => {
     playClickSound();
     setOnboardingStep('skill-check');
   };
@@ -217,9 +223,16 @@ export const LandingIntro: React.FC<LandingIntroProps> = ({
     }
   };
 
-  const handleProceedToMentorIntro = () => {
-    playSuccessSound();
-    setOnboardingStep('mentor-intro');
+  const getRecommendedMissionId = (profile: CyberSkillProfile | null): string => {
+    if (!profile) return 'mission-01-email';
+    const scores = [
+      { id: 'mission-01-email', val: profile.phishing },
+      { id: 'mission-02-usb', val: profile.deviceSecurity },
+      { id: 'mission-03-wifi', val: profile.privacy },
+      { id: 'mission-04-qr-scam', val: profile.socialEngineering },
+    ];
+    scores.sort((a, b) => a.val - b.val);
+    return scores[0].id;
   };
 
   const handleEnterCyberMentorGame = () => {
@@ -227,8 +240,8 @@ export const LandingIntro: React.FC<LandingIntroProps> = ({
     if (calculatedProfile && onCompleteSkillCheck) {
       onCompleteSkillCheck(calculatedProfile);
     }
-    // Enter the existing RPG world (Campus)
-    onStartAdventure();
+    const targetMissionId = getRecommendedMissionId(calculatedProfile);
+    onStartAdventure(targetMissionId);
   };
 
   // Helper for rendering 10-block visual score bar with responsive sizing
@@ -657,8 +670,60 @@ export const LandingIntro: React.FC<LandingIntroProps> = ({
           )}
 
           {/* -------------------------------------------------------------
-              STEP 2: CYBER SKILL CHECK (5 QUESTIONS, ONE AT A TIME)
-              Interactive game feel, not a school examination!
+              STEP 2: MEET AI MENTOR
+              Introduction of the player's companion before assessment
+              ------------------------------------------------------------- */}
+          {onboardingStep === 'meet-mentor' && (
+            <div className="w-full animate-in zoom-in-95 fade-in duration-300 space-y-6">
+              {/* Character Visual: Holographic AI Mentor Core */}
+              <div className="flex flex-col items-center">
+                <div className="relative flex h-20 w-20 items-center justify-center rounded-3xl border-2 border-cyan-400 bg-gradient-to-b from-cyan-950/90 to-[#0c1626] shadow-[0_0_25px_rgba(6,182,212,0.35)]">
+                  <div className="absolute inset-0 rounded-3xl border border-cyan-300/40 animate-ping opacity-30 pointer-events-none" />
+                  <Brain className="h-10 w-10 text-cyan-300 animate-pulse" />
+                </div>
+                <div className="mt-3 text-xs font-mono font-bold text-cyan-400 uppercase tracking-widest">
+                  CYBERMENTOR AI // COMPANION
+                </div>
+              </div>
+
+              {/* Dialogue Box */}
+              <div className="rounded-3xl border-2 border-cyan-500/60 bg-[#0e1929] p-6 sm:p-7 shadow-2xl text-left space-y-4 relative overflow-hidden">
+                <div className="flex items-center justify-between border-b border-cyan-800/40 pb-3">
+                  <div className="text-xs font-mono font-black text-cyan-400 uppercase tracking-wider flex items-center gap-2">
+                    <Sparkles className="h-4 w-4" />
+                    <span>AI MENTOR</span>
+                  </div>
+                  <AudioVoiceControl
+                    textToSpeak="Hey! I'm your CyberMentor. I'll help you understand the decisions you make throughout your journey. Don't worry about getting everything right. Let's see how you think."
+                    label="Listen"
+                    compact={false}
+                  />
+                </div>
+
+                <div className="text-base sm:text-lg text-slate-100 font-sans leading-relaxed space-y-3 font-medium">
+                  <p>"Hey! I'm your CyberMentor."</p>
+                  <p>"I'll help you understand the decisions you make throughout your journey."</p>
+                  <p className="text-cyan-200/90">
+                    "Don't worry about getting everything right. Let's see how you think."
+                  </p>
+                </div>
+              </div>
+
+              {/* Begin Skill Check Button */}
+              <button
+                id="begin-skill-check-btn"
+                onClick={handleBeginSkillCheck}
+                className="w-full group relative flex items-center justify-center gap-3 py-4 sm:py-4.5 px-8 rounded-2xl bg-cyan-500 hover:bg-cyan-400 active:scale-[0.99] text-slate-950 font-black text-base sm:text-lg tracking-wide uppercase shadow-2xl shadow-cyan-500/30 transition-all cursor-pointer border border-cyan-300/80"
+              >
+                <span>BEGIN SKILL CHECK</span>
+                <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+              </button>
+            </div>
+          )}
+
+          {/* -------------------------------------------------------------
+              STEP 3: CYBER SKILL CHECK (5 SITUATIONS, ONE AT A TIME)
+              Interactive game feel, subtle progress, mentor reactions
               ------------------------------------------------------------- */}
           {onboardingStep === 'skill-check' && currentQuestion && (
             <div className="w-full animate-in fade-in zoom-in-95 duration-200">
@@ -666,7 +731,7 @@ export const LandingIntro: React.FC<LandingIntroProps> = ({
               <div className="text-center mb-5">
                 <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-cyan-400/40 bg-cyan-950/60 text-cyan-300 text-xs font-mono font-bold mb-1.5">
                   <Brain className="h-3.5 w-3.5" />
-                  <span>STEP 1 // SKILL CHECK</span>
+                  <span>CYBER SENSE // ASSESSMENT</span>
                 </div>
                 <h2 className="text-2xl sm:text-3xl font-black uppercase text-white tracking-wide font-sans">
                   CYBER SKILL CHECK
@@ -679,9 +744,12 @@ export const LandingIntro: React.FC<LandingIntroProps> = ({
                 </p>
               </div>
 
-              {/* Progress Indicator: Dots + Question count */}
+              {/* Subtle Progress Indicator: CYBER SENSE ● ● ○ ○ ○ */}
               <div className="mb-4 flex items-center justify-between px-1">
                 <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-mono font-bold text-slate-400 mr-1 hidden sm:inline">
+                    CYBER SENSE
+                  </span>
                   {SKILL_CHECK_QUESTIONS.map((_, idx) => (
                     <span
                       key={idx}
@@ -696,7 +764,7 @@ export const LandingIntro: React.FC<LandingIntroProps> = ({
                   ))}
                 </div>
                 <span className="text-xs font-mono font-bold text-slate-300">
-                  QUESTION {currentQuestionIdx + 1} OF {SKILL_CHECK_QUESTIONS.length}
+                  SITUATION {currentQuestionIdx + 1} / {SKILL_CHECK_QUESTIONS.length}
                 </span>
               </div>
 
@@ -720,7 +788,7 @@ export const LandingIntro: React.FC<LandingIntroProps> = ({
                   👉 {currentQuestion.prompt}
                 </div>
 
-                {/* Large Answer Choices */}
+                {/* Answer Choices */}
                 <div className="space-y-2.5 pt-1">
                   {currentQuestion.options.map((option) => {
                     const isSelected = selectedOption === option.id;
@@ -765,19 +833,29 @@ export const LandingIntro: React.FC<LandingIntroProps> = ({
                   })}
                 </div>
 
-                {/* Instant Feedback & Advance */}
+                {/* Mentor Reaction & Next Button */}
                 {selectedOption && (
                   <div className="rounded-2xl border border-cyan-800/60 bg-[#0c1827] p-4 animate-in fade-in slide-in-from-bottom-2 duration-200 space-y-3">
-                    <div className="flex items-start gap-2.5">
-                      <Sparkles className="h-4 w-4 text-cyan-400 shrink-0 mt-0.5" />
-                      <div>
-                        <span className="text-[11px] font-mono font-bold text-cyan-300 uppercase block mb-0.5">
-                          INSIGHT:
-                        </span>
-                        <p className="text-xs sm:text-sm text-slate-200 leading-relaxed font-sans">
-                          {currentQuestion.options.find((o) => o.id === selectedOption)?.explanation}
-                        </p>
+                    <div className="flex items-start justify-between gap-2.5">
+                      <div className="flex items-start gap-2.5">
+                        <Sparkles className="h-4 w-4 text-cyan-400 shrink-0 mt-0.5" />
+                        <div>
+                          <span className="text-[11px] font-mono font-bold text-cyan-300 uppercase block mb-0.5">
+                            MENTOR REACTION:
+                          </span>
+                          <p className="text-xs sm:text-sm text-slate-200 leading-relaxed font-sans">
+                            {currentQuestion.options.find((o) => o.id === selectedOption)?.explanation}
+                          </p>
+                        </div>
                       </div>
+
+                      {/* TTS Voice Option for Mentor Reaction */}
+                      <AudioVoiceControl
+                        textToSpeak={
+                          currentQuestion.options.find((o) => o.id === selectedOption)?.explanation || ''
+                        }
+                        compact={true}
+                      />
                     </div>
 
                     <div className="flex justify-end pt-1">
@@ -797,8 +875,8 @@ export const LandingIntro: React.FC<LandingIntroProps> = ({
           )}
 
           {/* -------------------------------------------------------------
-              STEP 3: INITIAL CYBER PROFILE (YOUR STARTING PROFILE)
-              Visual skill areas, strength + improvement area
+              STEP 4: PERSONALIZED STARTING PROFILE & GAME ENTRY
+              Visual skill areas, strength, area to improve, and transition to RPG
               ------------------------------------------------------------- */}
           {onboardingStep === 'profile' && calculatedProfile && (
             <div className="w-full animate-in zoom-in-95 fade-in duration-300 space-y-5">
@@ -887,67 +965,58 @@ export const LandingIntro: React.FC<LandingIntroProps> = ({
                 </div>
               </div>
 
-              {/* Advance to AI Mentor */}
-              <div className="pt-2">
-                <button
-                  id="meet-ai-mentor-btn"
-                  onClick={handleProceedToMentorIntro}
-                  className="w-full flex items-center justify-center gap-2.5 py-4 px-6 rounded-2xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black text-sm sm:text-base tracking-wide shadow-xl shadow-cyan-500/20 transition-all cursor-pointer"
-                >
-                  <span>MEET YOUR AI MENTOR</span>
-                  <ArrowRight className="h-5 w-5" />
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* -------------------------------------------------------------
-              STEP 4: AI MENTOR INTRODUCTION
-              Character introduction dialogue & Enter RPG world
-              ------------------------------------------------------------- */}
-          {onboardingStep === 'mentor-intro' && (
-            <div className="w-full animate-in zoom-in-95 fade-in duration-300 space-y-6">
-              {/* Character Visual: Holographic AI Mentor Core */}
-              <div className="flex flex-col items-center">
-                <div className="relative flex h-20 w-20 items-center justify-center rounded-3xl border-2 border-cyan-400 bg-gradient-to-b from-cyan-950/80 to-[#0c1626] shadow-[0_0_25px_rgba(6,182,212,0.35)]">
-                  {/* Outer Pulsing Aura */}
-                  <div className="absolute inset-0 rounded-3xl border border-cyan-300/40 animate-ping opacity-30" />
-                  {/* Floating AI Core Icon */}
-                  <Brain className="h-10 w-10 text-cyan-300 animate-pulse" />
-                </div>
-                <div className="mt-3 text-xs font-mono font-bold text-cyan-400 uppercase tracking-widest">
-                  CYBERMENTOR AI // ADAPTIVE GUIDE
-                </div>
-              </div>
-
-              {/* Dialogue Box */}
-              <div className="rounded-3xl border-2 border-cyan-500/60 bg-[#0e1929] p-6 sm:p-7 shadow-2xl text-left space-y-3 relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-40 h-40 bg-cyan-500/10 rounded-full blur-2xl pointer-events-none" />
-
-                <div className="text-xs font-mono font-black text-cyan-400 uppercase tracking-wider flex items-center gap-2">
-                  <Sparkles className="h-4 w-4" />
-                  <span>AI MENTOR</span>
+              {/* CONNECT RESULT TO THE GAME: YOUR JOURNEY BEGINS */}
+              <div className="rounded-3xl border-2 border-cyan-500/60 bg-[#0c1626] p-5 sm:p-6 shadow-2xl text-left space-y-3 relative overflow-hidden">
+                <div className="flex items-center justify-between border-b border-cyan-900/50 pb-2.5">
+                  <div className="flex items-center gap-2 text-xs font-mono font-bold text-cyan-300 uppercase">
+                    <Sparkles className="h-4 w-4 text-cyan-400" />
+                    <span>YOUR JOURNEY BEGINS</span>
+                  </div>
+                  <AudioVoiceControl
+                    textToSpeak={`The Skill Check shows that ${
+                      calculatedProfile.topStrengthSentence || 'you have good cybersecurity instincts.'
+                    } However, ${
+                      calculatedProfile.improvementAreaSentence ||
+                      'some scenarios still present real challenges.'
+                    } Let's see how you handle your first real situation.`}
+                    label="Listen"
+                    compact={true}
+                  />
                 </div>
 
-                <div className="text-sm sm:text-base text-slate-100 font-sans leading-relaxed space-y-3 font-medium">
-                  <p>"Nice work.</p>
-                  <p>I've learned a little about how you make decisions online.</p>
+                <div className="text-xs sm:text-sm text-slate-200 leading-relaxed font-sans space-y-2">
                   <p>
-                    As you explore CyberMentor, I'll help you understand what you did well, where you
-                    can improve, and why your decisions matter."
+                    "The Skill Check shows that{' '}
+                    <strong className="text-emerald-300">
+                      {calculatedProfile.topStrengthSentence || 'you have sharp instincts.'}
+                    </strong>
+                    "
+                  </p>
+                  <p>
+                    "However,{' '}
+                    <span className="text-amber-300">
+                      {calculatedProfile.improvementAreaSentence ||
+                        'some situations can catch you off guard.'}
+                    </span>
+                    "
+                  </p>
+                  <p className="text-cyan-200 font-medium pt-1">
+                    "Let's see how you handle your first real situation."
                   </p>
                 </div>
               </div>
 
               {/* Enter CyberMentor Button */}
-              <button
-                id="enter-cybermentor-final-btn"
-                onClick={handleEnterCyberMentorGame}
-                className="w-full group relative flex items-center justify-center gap-3 py-4 sm:py-4.5 px-8 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-base sm:text-lg tracking-wide uppercase shadow-2xl shadow-emerald-500/30 transition-all cursor-pointer border border-emerald-300/70"
-              >
-                <span>ENTER CYBERMENTOR</span>
-                <Play className="h-5 w-5 fill-slate-950 transition-transform group-hover:scale-110" />
-              </button>
+              <div className="pt-2">
+                <button
+                  id="enter-cybermentor-btn"
+                  onClick={handleEnterCyberMentorGame}
+                  className="w-full group relative flex items-center justify-center gap-3 py-4 sm:py-4.5 px-8 rounded-2xl bg-emerald-500 hover:bg-emerald-400 active:scale-[0.99] text-slate-950 font-black text-base sm:text-lg tracking-wide uppercase shadow-2xl shadow-emerald-500/30 transition-all cursor-pointer border border-emerald-300/70"
+                >
+                  <span>ENTER CYBERMENTOR</span>
+                  <Play className="h-5 w-5 fill-slate-950 transition-transform group-hover:scale-110" />
+                </button>
+              </div>
             </div>
           )}
         </div>

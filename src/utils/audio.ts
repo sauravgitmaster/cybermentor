@@ -191,3 +191,125 @@ export function playTrustChangeSound(isPositive: boolean) {
     osc.stop(now + (isPositive ? 0.23 : 0.28));
   } catch {}
 }
+
+// =========================================================================
+// SPEECH SYNTHESIS / TEXT-TO-SPEECH (TTS) SYSTEM
+// =========================================================================
+
+let currentUtterance: SpeechSynthesisUtterance | null = null;
+let speechListeners: Set<(isSpeaking: boolean) => void> = new Set();
+
+export function subscribeSpeechState(listener: (isSpeaking: boolean) => void) {
+  speechListeners.add(listener);
+  return () => {
+    speechListeners.delete(listener);
+  };
+}
+
+function notifySpeechState(isSpeaking: boolean) {
+  speechListeners.forEach((l) => l(isSpeaking));
+}
+
+/**
+ * Speaks text using the browser SpeechSynthesis API.
+ * Automatically stops any ongoing speech to prevent overlapping voices.
+ * Honors sound mute settings.
+ */
+export function speakDialogue(text: string, onFinish?: () => void) {
+  if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+  if (getAudioMuted()) return;
+
+  try {
+    // Always cancel previous speech to prevent overlapping voices
+    window.speechSynthesis.cancel();
+
+    // Clean markdown or technical characters
+    const cleanText = text
+      .replace(/\[.*?\]/g, '')
+      .replace(/[#*_`]/g, '')
+      .replace(/→/g, ' to ')
+      .trim();
+
+    if (!cleanText) return;
+
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    utterance.rate = 1.0;
+    utterance.pitch = 1.05;
+
+    // Pick best English voice if available
+    const voices = window.speechSynthesis.getVoices();
+    const naturalVoice = voices.find(
+      (v) =>
+        v.lang.startsWith('en') &&
+        (v.name.includes('Natural') ||
+          v.name.includes('Google') ||
+          v.name.includes('Samantha') ||
+          v.name.includes('Karen') ||
+          v.name.includes('Arthur'))
+    );
+    if (naturalVoice) {
+      utterance.voice = naturalVoice;
+    }
+
+    utterance.onstart = () => {
+      notifySpeechState(true);
+    };
+
+    utterance.onend = () => {
+      currentUtterance = null;
+      notifySpeechState(false);
+      onFinish?.();
+    };
+
+    utterance.onerror = () => {
+      currentUtterance = null;
+      notifySpeechState(false);
+    };
+
+    currentUtterance = utterance;
+    window.speechSynthesis.speak(utterance);
+  } catch {}
+}
+
+/**
+ * Stops any ongoing dialogue speech.
+ */
+export function stopSpeech() {
+  if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+  try {
+    window.speechSynthesis.cancel();
+    currentUtterance = null;
+    notifySpeechState(false);
+  } catch {}
+}
+
+/**
+ * Pauses dialogue speech.
+ */
+export function pauseSpeech() {
+  if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+  try {
+    window.speechSynthesis.pause();
+    notifySpeechState(false);
+  } catch {}
+}
+
+/**
+ * Resumes dialogue speech.
+ */
+export function resumeSpeech() {
+  if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+  try {
+    window.speechSynthesis.resume();
+    notifySpeechState(true);
+  } catch {}
+}
+
+/**
+ * Returns true if speech synthesis is currently speaking.
+ */
+export function isSpeechActive(): boolean {
+  if (typeof window === 'undefined' || !('speechSynthesis' in window)) return false;
+  return window.speechSynthesis.speaking;
+}
+

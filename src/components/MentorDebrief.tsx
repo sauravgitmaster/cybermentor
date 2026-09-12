@@ -18,6 +18,7 @@ import {
   PlayerState,
 } from '../types';
 import { playClickSound } from '../utils/audio';
+import { AudioVoiceControl } from './AudioVoiceControl';
 
 interface MentorDebriefProps {
   mission: MissionData;
@@ -119,18 +120,28 @@ export const MentorDebrief: React.FC<MentorDebriefProps> = ({
 
       {/* CyberMentor AI Contextual Debrief Box */}
       <div className="rounded-xl border border-cyan-800/60 bg-[#0e131d] p-6 shadow-xl relative overflow-hidden">
-        <div className="flex items-center gap-3 border-b border-[#1b2434] pb-3 mb-5">
-          <div className="h-7 w-7 rounded border border-cyan-700 bg-cyan-950 flex items-center justify-center text-cyan-400">
-            <Cpu className="h-4 w-4" />
-          </div>
-          <div>
-            <div className="text-xs font-mono font-bold text-cyan-300 tracking-wider">
-              CYBERMENTOR AI // DEBRIEF
+        <div className="flex items-center justify-between border-b border-[#1b2434] pb-3 mb-5">
+          <div className="flex items-center gap-3">
+            <div className="h-7 w-7 rounded border border-cyan-700 bg-cyan-950 flex items-center justify-center text-cyan-400">
+              <Cpu className="h-4 w-4" />
             </div>
-            <div className="text-[10px] font-mono text-slate-400">
-              COGNITIVE DEFENSE ANALYSIS
+            <div>
+              <div className="text-xs font-mono font-bold text-cyan-300 tracking-wider">
+                CYBERMENTOR AI // DEBRIEF
+              </div>
+              <div className="text-[10px] font-mono text-slate-400">
+                COGNITIVE DEFENSE ANALYSIS
+              </div>
             </div>
           </div>
+
+          {mentorFeedback && (
+            <AudioVoiceControl
+              textToSpeak={`${mentorFeedback.mentorVoice}. ${mentorFeedback.evaluation}`}
+              label="Listen"
+              compact={false}
+            />
+          )}
         </div>
 
         {isLoadingFeedback ? (
