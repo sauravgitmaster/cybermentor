@@ -36,11 +36,40 @@ export default function App() {
   const [player, setPlayer] = useState<PlayerState>(() => loadSavedPlayerState());
   const [currentTab, setCurrentTab] = useState<
     'home' | 'world' | 'location' | 'mission' | 'abilities' | 'evidence' | 'profile' | 'scenario-ops'
-  >('location');
+  >(() => {
+    try {
+      const hash = window.location.hash.replace('#', '');
+      if (
+        hash === 'world' ||
+        hash === 'location' ||
+        hash === 'mission' ||
+        hash === 'abilities' ||
+        hash === 'evidence' ||
+        hash === 'profile' ||
+        hash === 'scenario-ops'
+      ) {
+        return hash;
+      }
+    } catch {}
+    return 'home';
+  });
   const [selectedLocationId, setSelectedLocationId] = useState<LocationId>('campus');
   const [activeMissionId, setActiveMissionId] = useState<string>('mission-01-email');
   const [soundMuted, setSoundMuted] = useState<boolean>(false);
   const [isHelpOpen, setIsHelpOpen] = useState<boolean>(false);
+
+  // Synchronize URL hash when tab changes
+  useEffect(() => {
+    try {
+      if (currentTab === 'home') {
+        if (window.location.hash) {
+          window.history.replaceState(null, '', window.location.pathname + window.location.search);
+        }
+      } else {
+        window.history.replaceState(null, '', `#${currentTab}`);
+      }
+    } catch {}
+  }, [currentTab]);
 
   // Initialize and synchronize with backend server
   useEffect(() => {
