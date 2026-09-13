@@ -15,6 +15,7 @@ import {
   Calendar,
   Sparkles,
   Lock,
+  BookOpen,
 } from 'lucide-react';
 import { PlayerState } from '../types';
 import { playClickSound } from '../utils/audio';
@@ -22,8 +23,8 @@ import { useAdaptiveScreen } from '../hooks/useAdaptiveScreen';
 
 interface GameHeaderProps {
   player: PlayerState;
-  activeTab: 'home' | 'world' | 'location' | 'mission' | 'abilities' | 'evidence' | 'profile' | 'scenario-ops';
-  onSelectTab: (tab: 'home' | 'world' | 'abilities' | 'evidence' | 'profile' | 'scenario-ops') => void;
+  activeTab: 'home' | 'world' | 'location' | 'mission' | 'abilities' | 'evidence' | 'profile' | 'scenario-ops' | 'cyber-manga';
+  onSelectTab: (tab: 'home' | 'world' | 'abilities' | 'evidence' | 'profile' | 'scenario-ops' | 'cyber-manga') => void;
   soundMuted: boolean;
   onToggleSound: () => void;
   onOpenHelp: () => void;
@@ -61,7 +62,7 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isMenuOpen]);
 
-  const handleMenuSelect = (tab: 'home' | 'world' | 'abilities' | 'evidence' | 'profile' | 'scenario-ops') => {
+  const handleMenuSelect = (tab: 'home' | 'world' | 'abilities' | 'evidence' | 'profile' | 'scenario-ops' | 'cyber-manga') => {
     playClickSound();
     setIsMenuOpen(false);
     onSelectTab(tab);
@@ -115,6 +116,23 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
           >
             <Home className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-amber-400" />
             <span className="hidden xs:inline">HOME</span>
+          </button>
+
+          {/* Direct STORY MODE Button */}
+          <button
+            id="nav-tab-manga"
+            onClick={() => {
+              playClickSound();
+              onSelectTab('cyber-manga');
+            }}
+            className={`flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-xl border transition-all cursor-pointer shadow-xs text-xs font-semibold touch-target min-h-[36px] ${
+              activeTab === 'cyber-manga'
+                ? 'border-cyan-400 bg-cyan-500/20 text-cyan-300'
+                : 'border-slate-700/60 bg-slate-900/60 hover:bg-slate-800 text-slate-200 hover:text-white'
+            }`}
+          >
+            <BookOpen className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-cyan-400" />
+            <span className="hidden xs:inline">STORY MODE</span>
           </button>
 
           {/* Contextual In-Game Systems Menu */}
@@ -189,6 +207,19 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
                   </span>
                 </button>
 
+                <button
+                  onClick={() => handleMenuSelect('cyber-manga')}
+                  className="w-full flex items-center justify-between px-3 py-2 rounded-xl hover:bg-[#182942] text-xs font-medium text-slate-200 hover:text-white transition-colors text-left"
+                >
+                  <span className="flex items-center gap-2">
+                    <BookOpen className="h-4 w-4 text-cyan-400" />
+                    <span>Story Mode</span>
+                  </span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 font-mono font-bold">
+                    STORIES
+                  </span>
+                </button>
+
                 {/* Evidence Notebook - Revealed when evidence collected or after mission 1 */}
                 {player.evidence.length > 0 || player.completedMissions.length > 0 ? (
                   <button
@@ -243,7 +274,7 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
                   </div>
                 )}
 
-                {/* Operative Dossier - Full profile unlocked as progression advances */}
+                {/* Profile - Full profile unlocked as progression advances */}
                 {player.completedMissions.length > 0 ? (
                   <button
                     onClick={() => handleMenuSelect('profile')}
@@ -251,17 +282,17 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
                   >
                     <span className="flex items-center gap-2">
                       <User className="h-4 w-4 text-emerald-400" />
-                      <span>Operative Dossier</span>
+                      <span>Profile</span>
                     </span>
                   </button>
                 ) : (
                   <div
                     className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium text-slate-500 cursor-not-allowed select-none"
-                    title="Dossier expands as you complete missions and unlock certificates"
+                    title="Profile expands as you complete missions and unlock certificates"
                   >
                     <span className="flex items-center gap-2">
                       <Lock className="h-3.5 w-3.5 text-slate-600" />
-                      <span>Operative Dossier</span>
+                      <span>Profile</span>
                     </span>
                     <span className="text-[10px] font-mono text-slate-600">After M1</span>
                   </div>

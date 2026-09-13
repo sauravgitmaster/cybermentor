@@ -21,6 +21,9 @@ import {
   BookOpen,
   MapPin,
   MessageSquare,
+  Layers,
+  X,
+  Filter,
 } from 'lucide-react';
 import {
   Scenario,
@@ -149,6 +152,9 @@ export const ScenarioOpsView: React.FC<ScenarioOpsViewProps> = ({
   const [selectedOptionId, setSelectedOptionId] = useState<'A' | 'B' | 'C' | 'D' | null>(null);
   const [isEvaluating, setIsEvaluating] = useState<boolean>(false);
   const [mentorResponse, setMentorResponse] = useState<ScenarioMentorFeedback | null>(null);
+  const [isLibraryOpen, setIsLibraryOpen] = useState<boolean>(false);
+  const [libraryFilterCategory, setLibraryFilterCategory] = useState<string>('all');
+  const [librarySearchQuery, setLibrarySearchQuery] = useState<string>('');
 
   // Keep progress saved in background
   useEffect(() => {
@@ -236,6 +242,19 @@ export const ScenarioOpsView: React.FC<ScenarioOpsViewProps> = ({
     setSelectedOptionId(null);
     setMentorResponse(null);
     setIsEvaluating(false);
+  };
+
+  const handleJumpToScenario = (scenarioId: string) => {
+    playClickSound();
+    setActiveScenarioId(scenarioId);
+    setSelectedOptionId(null);
+    setMentorResponse(null);
+    setIsEvaluating(false);
+    setIsLibraryOpen(false);
+    if (!sessionHistory.includes(scenarioId)) {
+      setSessionHistory((prev) => [...prev, scenarioId]);
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // Handle Option Click
@@ -370,8 +389,24 @@ export const ScenarioOpsView: React.FC<ScenarioOpsViewProps> = ({
             </div>
           </div>
 
-          {/* Quick Exit Actions */}
+          {/* Quick Exit & Library Actions */}
           <div className="flex items-center gap-2">
+            <button
+              id="scenario-ops-library-btn"
+              onClick={() => {
+                playClickSound();
+                setIsLibraryOpen(true);
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-amber-300 hover:text-amber-200 bg-amber-950/60 hover:bg-amber-900/80 border border-amber-600/60 transition-colors shadow-sm"
+              title="Open Scenario Library"
+            >
+              <Layers className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">LIBRARY</span>
+              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">
+                {SCENARIOS.length}
+              </span>
+            </button>
+
             <button
               id="scenario-ops-home-btn"
               onClick={() => {
@@ -707,6 +742,266 @@ export const ScenarioOpsView: React.FC<ScenarioOpsViewProps> = ({
           </div>
         )}
       </main>
+
+      {/* 3. SCENARIO LIBRARY BROWSER MODAL */}
+      {isLibraryOpen && (
+        <div
+          id="scenario-library-modal-backdrop"
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-200"
+          onClick={() => setIsLibraryOpen(false)}
+        >
+          <div
+            id="scenario-library-modal-content"
+            className="w-full max-w-4xl max-h-[85vh] bg-[#0d1524] border-2 border-slate-700 rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="p-4 sm:p-5 border-b border-slate-800 flex items-center justify-between gap-3 bg-[#111c2e]">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/50 flex items-center justify-center text-amber-400">
+                  <Layers className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-base sm:text-lg font-extrabold text-white tracking-tight flex items-center gap-2">
+                    SCENARIO OPS LIBRARY
+                    <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                      {SCENARIOS.length} Total
+                    </span>
+                  </h3>
+                  <p className="text-xs text-slate-400">
+                    Explore real-world security encounters across diverse operational domains
+                  </p>
+                </div>
+              </div>
+
+              <button
+                id="close-library-modal-btn"
+                onClick={() => setIsLibraryOpen(false)}
+                className="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-750 flex items-center justify-center text-slate-400 hover:text-white transition-colors"
+                title="Close Library"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Filter & Search Bar */}
+            <div className="p-4 border-b border-slate-800/80 bg-[#0c1422] space-y-3">
+              {/* Search input */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Search scenarios by title, keyword, or topic (e.g., QR, Wi-Fi, Deepfake, Sudo)..."
+                  value={librarySearchQuery}
+                  onChange={(e) => setLibrarySearchQuery(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2 rounded-xl bg-slate-900 border border-slate-750 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500/80 transition-colors"
+                />
+                {librarySearchQuery && (
+                  <button
+                    onClick={() => setLibrarySearchQuery('')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-white"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+
+              {/* Category Pills */}
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs no-scrollbar">
+                {[
+                  { id: 'all', label: 'All Scenarios', count: SCENARIOS.length },
+                  {
+                    id: 'social-engineering',
+                    label: 'AI & Social',
+                    count: SCENARIOS.filter((s) => s.category === 'social-engineering').length,
+                  },
+                  {
+                    id: 'qr',
+                    label: 'QR Scams',
+                    count: SCENARIOS.filter((s) => s.category === 'qr').length,
+                  },
+                  {
+                    id: 'wifi',
+                    label: 'Public Wi-Fi',
+                    count: SCENARIOS.filter((s) => s.category === 'wifi').length,
+                  },
+                  {
+                    id: 'privacy',
+                    label: 'App Permissions',
+                    count: SCENARIOS.filter((s) => s.category === 'privacy').length,
+                  },
+                  {
+                    id: 'phishing',
+                    label: 'Phishing',
+                    count: SCENARIOS.filter((s) => s.category === 'phishing').length,
+                  },
+                  {
+                    id: 'hardware',
+                    label: 'Hardware & USB',
+                    count: SCENARIOS.filter((s) => s.category === 'hardware').length,
+                  },
+                  {
+                    id: 'passwords',
+                    label: 'Passwords & Input',
+                    count: SCENARIOS.filter((s) => s.category === 'passwords').length,
+                  },
+                  {
+                    id: 'account-security',
+                    label: 'Account & Tokens',
+                    count: SCENARIOS.filter((s) => s.category === 'account-security').length,
+                  },
+                ].map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => {
+                      playClickSound();
+                      setLibraryFilterCategory(tab.id);
+                    }}
+                    className={`shrink-0 px-2.5 py-1 rounded-lg font-medium transition-all flex items-center gap-1.5 ${
+                      libraryFilterCategory === tab.id
+                        ? 'bg-amber-400 text-slate-950 font-bold shadow'
+                        : 'bg-slate-900/80 text-slate-400 hover:text-slate-200 border border-slate-800'
+                    }`}
+                  >
+                    <span>{tab.label}</span>
+                    <span
+                      className={`text-[10px] font-mono px-1 rounded ${
+                        libraryFilterCategory === tab.id
+                          ? 'bg-slate-950/20 text-slate-900 font-bold'
+                          : 'bg-slate-800 text-slate-400'
+                      }`}
+                    >
+                      {tab.count}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Scenarios Grid */}
+            <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-2.5">
+              {(() => {
+                const filtered = SCENARIOS.filter((s) => {
+                  const matchesCategory =
+                    libraryFilterCategory === 'all' || s.category === libraryFilterCategory;
+                  const q = librarySearchQuery.toLowerCase().trim();
+                  const matchesSearch =
+                    !q ||
+                    s.title.toLowerCase().includes(q) ||
+                    s.code.toLowerCase().includes(q) ||
+                    s.situation.toLowerCase().includes(q) ||
+                    s.categoryLabel.toLowerCase().includes(q);
+                  return matchesCategory && matchesSearch;
+                });
+
+                if (filtered.length === 0) {
+                  return (
+                    <div className="py-12 text-center text-slate-400 text-xs">
+                      <p>No scenarios found matching your filter criteria.</p>
+                      <button
+                        onClick={() => {
+                          setLibraryFilterCategory('all');
+                          setLibrarySearchQuery('');
+                        }}
+                        className="mt-2 text-amber-400 underline font-semibold"
+                      >
+                        Reset filters
+                      </button>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                    {filtered.map((sc) => {
+                      const isCurrent = sc.id === activeScenarioId;
+                      const isCompleted = progress.completedIds.includes(sc.id);
+                      const decision = progress.decisions[sc.id];
+                      const isSafe = decision?.classification === 'secure';
+
+                      return (
+                        <button
+                          key={sc.id}
+                          id={`select-scenario-${sc.id}`}
+                          onClick={() => handleJumpToScenario(sc.id)}
+                          className={`w-full text-left p-3.5 rounded-2xl border transition-all flex flex-col justify-between gap-2 group relative cursor-pointer ${
+                            isCurrent
+                              ? 'border-amber-500/80 bg-amber-950/20 shadow-md ring-1 ring-amber-500/40'
+                              : 'border-slate-800 hover:border-slate-700 bg-[#121c2d]/70 hover:bg-[#152236]'
+                          }`}
+                        >
+                          <div className="space-y-1">
+                            {/* Top Badges */}
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-1.5">
+                                <span className="font-mono text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-slate-900 border border-slate-750 text-cyan-300">
+                                  {sc.code}
+                                </span>
+                                <span className="text-[10px] text-slate-400 font-medium truncate max-w-[120px]">
+                                  {sc.categoryLabel.split('&')[0]}
+                                </span>
+                              </div>
+
+                              {/* Status Badge */}
+                              {isCurrent ? (
+                                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                                  CURRENT
+                                </span>
+                              ) : isCompleted ? (
+                                isSafe ? (
+                                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800 flex items-center gap-1">
+                                    <Check className="h-2.5 w-2.5 stroke-[3]" /> SAFE
+                                  </span>
+                                ) : (
+                                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-950 text-amber-300 border border-amber-800 flex items-center gap-1">
+                                    <AlertTriangle className="h-2.5 w-2.5" /> REVIEWED
+                                  </span>
+                                )
+                              ) : (
+                                <span className="text-[9px] font-medium px-1.5 py-0.5 rounded bg-slate-800/80 text-slate-400">
+                                  NEW
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Title */}
+                            <div className="text-xs sm:text-sm font-bold text-white group-hover:text-amber-300 transition-colors line-clamp-1">
+                              {sc.title}
+                            </div>
+                          </div>
+
+                          {/* Difficulty & Action */}
+                          <div className="flex items-center justify-between pt-1 border-t border-slate-800/60 text-[10px] text-slate-400">
+                            <span className="font-mono text-slate-400">{sc.difficulty}</span>
+                            <span className="text-amber-400 font-medium group-hover:translate-x-0.5 transition-transform flex items-center gap-0.5">
+                              Launch <ArrowRight className="h-2.5 w-2.5 inline" />
+                            </span>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-3 sm:p-4 border-t border-slate-800 bg-[#10192a] flex items-center justify-between text-xs text-slate-400">
+              <span>
+                Completed:{' '}
+                <strong className="text-white font-bold">{progress.completedIds.length}</strong> /{' '}
+                {SCENARIOS.length}
+              </span>
+              <button
+                onClick={() => setIsLibraryOpen(false)}
+                className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-medium transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

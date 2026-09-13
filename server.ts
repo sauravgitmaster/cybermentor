@@ -8,6 +8,7 @@ import { telemetryRouter } from "./server/routes/telemetryRoutes";
 import { mentorRouter } from "./server/routes/mentorRoutes";
 import { scenarioRouter } from "./server/routes/scenarioRoutes";
 import { missionsRouter } from "./server/routes/missionsRoutes";
+import { mangaRouter } from "./server/routes/mangaRoutes";
 import { db } from "./server/db";
 
 dotenv.config();
@@ -38,6 +39,7 @@ app.use("/api/mentor", mentorRouter);
 app.use("/api/scenarios", scenarioRouter);
 app.use("/api/scenario", scenarioRouter);
 app.use("/api/missions", missionsRouter);
+app.use("/api/manga", mangaRouter);
 
 // Vite middleware or production static serving
 async function startServer() {

@@ -23,6 +23,8 @@ import {
   BookOpen,
   MessageSquare,
   Award,
+  Gamepad2,
+  ShieldCheck,
 } from 'lucide-react';
 import { PlayerState, MissionData, CyberSkillProfile } from '../types';
 import { SKILL_CHECK_QUESTIONS, evaluateSkillCheck } from '../data/skillCheckQuestions';
@@ -118,21 +120,23 @@ interface LandingIntroProps {
   nextMission?: MissionData;
   onStartAdventure: (firstMissionId?: string) => void;
   onOpenScenarioOps?: () => void;
+  onOpenCyberManga?: () => void;
   onOpenHowItWorks: () => void;
   onOpenSkillCheck?: () => void;
-  onNavigate?: (tab: 'world' | 'abilities' | 'evidence' | 'profile') => void;
+  onNavigate?: (tab: 'world' | 'abilities' | 'evidence' | 'profile' | 'cyber-manga') => void;
   soundMuted?: boolean;
   onToggleSound?: () => void;
   onCompleteSkillCheck?: (profile: CyberSkillProfile) => void;
   onResetProgress?: () => void;
 }
 
-type OnboardingStep = 'intro' | 'meet-mentor' | 'skill-check' | 'profile';
+type OnboardingStep = 'intro' | 'meet-mentor' | 'skill-check' | 'profile' | 'choose-experience';
 
 export const LandingIntro: React.FC<LandingIntroProps> = ({
   player,
   onStartAdventure,
   onOpenScenarioOps,
+  onOpenCyberManga,
   onOpenHowItWorks,
   onOpenSkillCheck,
   onNavigate,
@@ -152,8 +156,8 @@ export const LandingIntro: React.FC<LandingIntroProps> = ({
   // If player has already completed skill check, they are a returning user!
   const isReturningUser = Boolean(player.skillCheckCompleted);
 
-  // New User Onboarding steps: intro -> meet-mentor -> skill-check -> profile -> enter game
-  const [onboardingStep, setOnboardingStep] = useState<OnboardingStep>('intro');
+  // Home page defaults directly to the two core options (Choose Experience)
+  const [onboardingStep, setOnboardingStep] = useState<OnboardingStep>('choose-experience');
 
   // Skill Check Interactive State
   const [currentQuestionIdx, setCurrentQuestionIdx] = useState<number>(0);
@@ -244,6 +248,25 @@ export const LandingIntro: React.FC<LandingIntroProps> = ({
     onStartAdventure(targetMissionId);
   };
 
+  const handleChoosePlayGame = () => {
+    playSuccessSound();
+    if (calculatedProfile && onCompleteSkillCheck) {
+      onCompleteSkillCheck(calculatedProfile);
+    }
+    const targetMissionId = getRecommendedMissionId(calculatedProfile);
+    onStartAdventure(targetMissionId);
+  };
+
+  const handleChooseScenarioOps = () => {
+    playSuccessSound();
+    if (calculatedProfile && onCompleteSkillCheck) {
+      onCompleteSkillCheck(calculatedProfile);
+    }
+    if (onOpenScenarioOps) {
+      onOpenScenarioOps();
+    }
+  };
+
   // Helper for rendering 10-block visual score bar with responsive sizing
   const renderVisualBlocks = (score: number, colorClass: string) => {
     const filledCount = Math.min(10, Math.max(1, Math.round(score / 10)));
@@ -309,169 +332,16 @@ export const LandingIntro: React.FC<LandingIntroProps> = ({
         </div>
       )}
 
-      {/* =========================================================================
-          CASE A: RETURNING USER FLOW
-          If the user has already completed the Skill Check:
-          DO NOT show the intro page again.
-          DO NOT make them repeat the Skill Check.
-          Show clean returning-user entry: WELCOME BACK -> [ CONTINUE ]
-          ========================================================================= */}
-      {isReturningUser ? (
-        <div className="relative z-10 mx-auto flex w-full max-w-lg flex-col items-center text-center animate-in fade-in zoom-in-95 duration-200">
-          {/* Header */}
-          <div className="mb-6">
-            <span className="text-xs font-mono font-bold tracking-widest text-cyan-400 uppercase">
-              OPERATIVE PROFILE ACTIVE
-            </span>
-            <h1 className="mt-1 text-3xl sm:text-4xl font-extrabold tracking-tight text-white uppercase font-sans">
-              WELCOME BACK
-            </h1>
-            <p className="mt-1.5 text-base sm:text-lg text-slate-300 font-medium">
-              Continue your CyberMentor journey.
-            </p>
-          </div>
-
-          {/* Operative Status Card */}
-          <div className="w-full rounded-2xl border-2 border-[#223552] bg-[#111c2c] p-5 shadow-xl mb-6 text-left">
-            <div className="flex items-center justify-between border-b border-[#1b2c45] pb-3 mb-4">
-              <div className="flex items-center gap-3">
-                {/* 2D Sprite Avatar */}
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-cyan-400/60 bg-[#17263c] shadow-xs">
-                  <svg width="26" height="26" viewBox="0 0 32 32">
-                    <rect x="6" y="5" width="20" height="9" rx="3" fill="#92400e" />
-                    <rect x="7" y="10" width="18" height="13" rx="3" fill="#e2b992" />
-                    <rect x="10" y="14" width="3" height="3" fill="#0f172a" />
-                    <rect x="19" y="14" width="3" height="3" fill="#0f172a" />
-                    <rect x="13" y="19" width="6" height="1.5" rx="0.5" fill="#c2410c" />
-                    <rect x="8" y="23" width="16" height="7" rx="2" fill="#0284c7" />
-                  </svg>
-                </div>
-                <div>
-                  <div className="text-sm font-bold text-white uppercase tracking-wide font-mono">
-                    OPERATIVE {player.name}
-                  </div>
-                  <div className="text-xs text-cyan-300 font-sans">
-                    Level {player.level} • {player.title}
-                  </div>
-                </div>
-              </div>
-
-              <div className="text-right">
-                <span className="text-[10px] font-mono text-slate-400 uppercase block">
-                  DIGITAL TRUST
-                </span>
-                <span className="text-sm sm:text-base font-bold font-mono text-amber-300">
-                  🛡️ {player.digitalTrust} / 100
-                </span>
-              </div>
-            </div>
-
-            {/* Quick Summary */}
-            <div className="grid grid-cols-2 gap-2 text-xs font-mono">
-              <div className="p-2.5 rounded-xl bg-[#0d1624] border border-[#1b2b42]">
-                <span className="text-slate-400 block text-[10px] uppercase">
-                  Missions Resolved
-                </span>
-                <span className="text-slate-100 font-bold text-sm">
-                  {player.completedMissions.length}
-                </span>
-              </div>
-              <div className="p-2.5 rounded-xl bg-[#0d1624] border border-[#1b2b42]">
-                <span className="text-slate-400 block text-[10px] uppercase">
-                  Evidence Logged
-                </span>
-                <span className="text-slate-100 font-bold text-sm">
-                  {player.evidence.length}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Primary Action Button: CONTINUE */}
-          <button
-            id="returning-continue-btn"
-            onClick={() => {
-              playClickSound();
-              onStartAdventure();
-            }}
-            className="w-full group relative flex items-center justify-center gap-3 px-6 py-4 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-base sm:text-lg shadow-xl shadow-emerald-500/20 hover:shadow-emerald-500/35 transition-all duration-150 cursor-pointer border border-emerald-300/60"
-          >
-            <Play className="h-5 w-5 fill-slate-950 transition-transform group-hover:scale-110" />
-            <span>CONTINUE</span>
-          </button>
-
-          {/* Secondary Options */}
-          <div className="mt-4 flex flex-wrap items-center justify-center gap-2.5 text-xs">
-            {onOpenScenarioOps && (
-              <button
-                id="returning-scenario-ops-btn"
-                onClick={() => {
-                  playClickSound();
-                  onOpenScenarioOps();
-                }}
-                className="px-4 py-2 rounded-xl bg-slate-900/80 hover:bg-slate-800 border border-slate-700/80 text-amber-300 hover:text-amber-200 transition-colors font-medium flex items-center gap-1.5 cursor-pointer"
-              >
-                <Brain className="h-3.5 w-3.5" />
-                <span>Scenario Ops</span>
-              </button>
-            )}
-
-            {onNavigate && (
-              <button
-                id="returning-dossier-btn"
-                onClick={() => {
-                  playClickSound();
-                  onNavigate('profile');
-                }}
-                className="px-4 py-2 rounded-xl bg-slate-900/80 hover:bg-slate-800 border border-slate-700/80 text-cyan-300 hover:text-cyan-200 transition-colors font-medium flex items-center gap-1.5 cursor-pointer"
-              >
-                <User className="h-3.5 w-3.5" />
-                <span>Operative Dossier</span>
-              </button>
-            )}
-
-            {onOpenSkillCheck && (
-              <button
-                id="returning-retake-skillcheck-btn"
-                onClick={() => {
-                  playClickSound();
-                  onOpenSkillCheck();
-                }}
-                className="px-4 py-2 rounded-xl bg-slate-900/80 hover:bg-slate-800 border border-slate-700/80 text-slate-300 hover:text-white transition-colors font-medium flex items-center gap-1.5 cursor-pointer"
-              >
-                <RotateCcw className="h-3.5 w-3.5" />
-                <span>Retake Skill Check</span>
-              </button>
-            )}
-          </div>
-
-          {/* Reset progress */}
-          {onResetProgress && (
-            <div className="mt-8 pt-4 border-t border-slate-800/60 w-full flex justify-center">
-              <button
-                id="returning-reset-btn"
-                onClick={() => {
-                  playClickSound();
-                  onResetProgress();
-                }}
-                className="text-[11px] font-mono text-slate-500 hover:text-rose-400 transition-colors flex items-center gap-1 cursor-pointer"
-              >
-                <RotateCcw className="h-3 w-3" />
-                <span>Start Fresh as New Recruit</span>
-              </button>
-            </div>
-          )}
-        </div>
-      ) : (
-        /* =========================================================================
-            CASE B: NEW USER FLOW
-            FIRST EXPLAIN -> THEN ASSESS -> THEN PERSONALIZE -> THEN ENTER THE GAME
-            ========================================================================= */
-        <div
-          className={`relative z-10 mx-auto flex w-full flex-col items-center ${
-            onboardingStep === 'intro' ? 'max-w-5xl xl:max-w-6xl' : 'max-w-2xl'
-          }`}
-        >
+      {/* Main Home / Onboarding Flow: Defaults directly to Choose Experience */}
+      <div
+        className={`relative z-10 mx-auto flex w-full flex-col items-center ${
+          onboardingStep === 'intro'
+            ? 'max-w-5xl xl:max-w-6xl'
+            : onboardingStep === 'choose-experience'
+            ? 'max-w-4xl'
+            : 'max-w-2xl'
+        }`}
+      >
           {/* -------------------------------------------------------------
               STEP 1: WELCOME / INTRO PAGE
               Explain the experience, What will I do here?, Why CyberMentor AI?
@@ -727,6 +597,22 @@ export const LandingIntro: React.FC<LandingIntroProps> = ({
               ------------------------------------------------------------- */}
           {onboardingStep === 'skill-check' && currentQuestion && (
             <div className="w-full animate-in fade-in zoom-in-95 duration-200">
+              <div className="flex items-center justify-between mb-3">
+                <button
+                  id="skill-check-cancel-btn"
+                  onClick={() => {
+                    playClickSound();
+                    setOnboardingStep('choose-experience');
+                  }}
+                  className="text-xs font-mono text-slate-400 hover:text-cyan-300 transition-colors inline-flex items-center gap-1 cursor-pointer py-1 px-2.5 rounded-lg hover:bg-slate-800/60"
+                >
+                  ← Return to Home Choice
+                </button>
+                <span className="text-xs font-mono text-cyan-400">
+                  Question {currentQuestionIdx + 1} of {SKILL_CHECK_QUESTIONS.length}
+                </span>
+              </div>
+
               {/* Header */}
               <div className="text-center mb-5">
                 <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-cyan-400/40 bg-cyan-950/60 text-cyan-300 text-xs font-mono font-bold mb-1.5">
@@ -875,152 +761,532 @@ export const LandingIntro: React.FC<LandingIntroProps> = ({
           )}
 
           {/* -------------------------------------------------------------
-              STEP 4: PERSONALIZED STARTING PROFILE & GAME ENTRY
-              Visual skill areas, strength, area to improve, and transition to RPG
+              STEP 4: PERSONALIZED STARTING PROFILE
+              Concise results: Initial Digital Trust, Skill Level, Capabilities, Strengths & Areas to improve
               ------------------------------------------------------------- */}
-          {onboardingStep === 'profile' && calculatedProfile && (
-            <div className="w-full animate-in zoom-in-95 fade-in duration-300 space-y-5">
-              <div className="text-center space-y-1">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-emerald-400/40 bg-emerald-950/60 text-emerald-300 text-xs font-mono font-bold">
-                  <Award className="h-3.5 w-3.5" />
-                  <span>ASSESSMENT COMPLETE</span>
+          {onboardingStep === 'profile' && (calculatedProfile || player.skillProfile) && (() => {
+            const activeProfile = calculatedProfile || player.skillProfile;
+            if (!activeProfile) return null;
+            const initialTrustScore = activeProfile.overallScore ?? Math.round(
+              (activeProfile.phishing + activeProfile.privacy + activeProfile.deviceSecurity + activeProfile.socialEngineering) / 4
+            );
+            const initialSkillLevelTitle =
+              initialTrustScore >= 80
+                ? 'Level 2 • Vigilant Defender'
+                : initialTrustScore >= 60
+                ? 'Level 1 • Cyber Scout'
+                : 'Level 1 • Cyber Apprentice';
+
+            return (
+              <div className="w-full animate-in zoom-in-95 fade-in duration-300 space-y-5">
+                <div className="flex items-center justify-between">
+                  <button
+                    onClick={() => {
+                      playClickSound();
+                      setOnboardingStep('choose-experience');
+                    }}
+                    className="text-xs font-mono text-slate-400 hover:text-cyan-300 transition-colors inline-flex items-center gap-1 cursor-pointer py-1 px-2.5 rounded-lg hover:bg-slate-800/60"
+                  >
+                    ← Back to Experience Options
+                  </button>
+                  <span className="text-[11px] font-mono text-slate-400">
+                    Operative: {player.name}
+                  </span>
                 </div>
-                <h2 className="text-2xl sm:text-3xl font-black text-white uppercase font-sans">
-                  YOUR STARTING PROFILE
+
+                <div className="text-center space-y-1">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-emerald-400/40 bg-emerald-950/60 text-emerald-300 text-xs font-mono font-bold">
+                    <Award className="h-3.5 w-3.5" />
+                    <span>SKILL PROFILE READY</span>
+                  </div>
+                  <h2 className="text-2xl sm:text-3xl font-black text-white uppercase font-sans">
+                    YOUR CYBER CAPABILITY PROFILE
+                  </h2>
+                  <p className="text-xs sm:text-sm text-slate-300">
+                    Review your calibrated instincts and readiness across core domains.
+                  </p>
+                </div>
+
+                {/* Concise Summary Overview: Initial Trust & Initial Skill Level */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-left">
+                  <div className="rounded-2xl border border-cyan-700/50 bg-[#0e1b2d] p-4 flex items-center gap-3.5 shadow-md">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-cyan-950/80 border border-cyan-500/40 text-cyan-300 shrink-0">
+                      <ShieldCheck className="h-6 w-6 text-cyan-400" />
+                    </div>
+                    <div>
+                      <div className="text-[10px] font-mono font-bold text-cyan-400 uppercase tracking-wider">
+                        DIGITAL TRUST SCORE
+                      </div>
+                      <div className="text-xl sm:text-2xl font-black text-white font-mono">
+                        {initialTrustScore} <span className="text-xs text-slate-400 font-sans">/ 100</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-purple-700/50 bg-[#12182c] p-4 flex items-center gap-3.5 shadow-md">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-purple-950/80 border border-purple-500/40 text-purple-300 shrink-0">
+                      <Sparkles className="h-6 w-6 text-purple-400" />
+                    </div>
+                    <div>
+                      <div className="text-[10px] font-mono font-bold text-purple-400 uppercase tracking-wider">
+                        CALIBRATED SKILL LEVEL
+                      </div>
+                      <div className="text-sm sm:text-base font-black text-white font-sans">
+                        {initialSkillLevelTitle}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Simple Visual Skill Indicators (10 visual blocks + percent) */}
+                <div className="rounded-3xl border-2 border-[#243754] bg-[#101a2a] p-5 sm:p-6 shadow-2xl space-y-4 text-left">
+                  <div className="text-[11px] font-mono font-bold text-cyan-400 uppercase tracking-wider border-b border-[#1b2a40] pb-2">
+                    STARTING CAPABILITIES
+                  </div>
+
+                  {/* 1. Phishing Awareness */}
+                  <div className="space-y-1.5">
+                    <div className="flex justify-between items-center text-xs font-mono">
+                      <span className="text-slate-200 font-bold">🎣 Phishing Awareness</span>
+                      <span className="text-cyan-400 font-bold">{activeProfile.phishing}%</span>
+                    </div>
+                    {renderVisualBlocks(activeProfile.phishing, 'bg-cyan-400')}
+                  </div>
+
+                  {/* 2. Privacy & Password Safety */}
+                  <div className="space-y-1.5">
+                    <div className="flex justify-between items-center text-xs font-mono">
+                      <span className="text-slate-200 font-bold">🔐 Privacy &amp; Password Safety</span>
+                      <span className="text-purple-400 font-bold">{activeProfile.privacy}%</span>
+                    </div>
+                    {renderVisualBlocks(activeProfile.privacy, 'bg-purple-400')}
+                  </div>
+
+                  {/* 3. Device Safety */}
+                  <div className="space-y-1.5">
+                    <div className="flex justify-between items-center text-xs font-mono">
+                      <span className="text-slate-200 font-bold">📱 Device Safety</span>
+                      <span className="text-emerald-400 font-bold">
+                        {activeProfile.deviceSecurity}%
+                      </span>
+                    </div>
+                    {renderVisualBlocks(activeProfile.deviceSecurity, 'bg-emerald-400')}
+                  </div>
+
+                  {/* 4. Social Engineering */}
+                  <div className="space-y-1.5">
+                    <div className="flex justify-between items-center text-xs font-mono">
+                      <span className="text-slate-200 font-bold">🧠 Social Engineering</span>
+                      <span className="text-amber-400 font-bold">
+                        {activeProfile.socialEngineering}%
+                      </span>
+                    </div>
+                    {renderVisualBlocks(activeProfile.socialEngineering, 'bg-amber-400')}
+                  </div>
+                </div>
+
+                {/* STRENGTH + IMPROVEMENT AREA */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-left">
+                  <div className="rounded-2xl border border-emerald-700/50 bg-emerald-950/30 p-4 space-y-1">
+                    <span className="font-mono font-bold text-emerald-400 text-xs uppercase flex items-center gap-1.5">
+                      <CheckCircle2 className="h-4 w-4" />
+                      YOUR STRENGTH
+                    </span>
+                    <p className="text-xs sm:text-sm text-slate-200 font-medium leading-relaxed">
+                      {activeProfile.topStrengthSentence ||
+                        'You are good at protecting personal information.'}
+                    </p>
+                  </div>
+
+                  <div className="rounded-2xl border border-amber-700/50 bg-amber-950/30 p-4 space-y-1">
+                    <span className="font-mono font-bold text-amber-400 text-xs uppercase flex items-center gap-1.5">
+                      <AlertTriangle className="h-4 w-4" />
+                      AREA TO IMPROVE
+                    </span>
+                    <p className="text-xs sm:text-sm text-slate-200 font-medium leading-relaxed">
+                      {activeProfile.improvementAreaSentence ||
+                        'You sometimes trust urgent messages too quickly.'}
+                    </p>
+                  </div>
+                </div>
+
+                {/* CONNECT RESULT TO THE EXPERIENCE CHOICE */}
+                <div className="rounded-3xl border-2 border-cyan-500/60 bg-[#0c1626] p-5 sm:p-6 shadow-2xl text-left space-y-3 relative overflow-hidden">
+                  <div className="flex items-center justify-between border-b border-cyan-900/50 pb-2.5">
+                    <div className="flex items-center gap-2 text-xs font-mono font-bold text-cyan-300 uppercase">
+                      <Sparkles className="h-4 w-4 text-cyan-400" />
+                      <span>AI MENTOR BRIEFING</span>
+                    </div>
+                    <AudioVoiceControl
+                      textToSpeak={`Your Skill Check is complete. ${
+                        activeProfile.topStrengthSentence || 'You have sharp instincts.'
+                      } However, ${
+                        activeProfile.improvementAreaSentence ||
+                        'some situations can catch you off guard.'
+                      } How would you like to begin your journey?`}
+                      label="Listen"
+                      compact={true}
+                    />
+                  </div>
+
+                  <div className="text-xs sm:text-sm text-slate-200 leading-relaxed font-sans space-y-2">
+                    <p>
+                      "Your assessment is complete. The Skill Check shows that{' '}
+                      <strong className="text-emerald-300">
+                        {activeProfile.topStrengthSentence || 'you have sharp instincts.'}
+                      </strong>
+                      "
+                    </p>
+                    <p>
+                      "However,{' '}
+                      <span className="text-amber-300">
+                        {activeProfile.improvementAreaSentence ||
+                          'some situations can catch you off guard.'}
+                      </span>
+                      "
+                    </p>
+                    <p className="text-cyan-200 font-bold pt-1">
+                      "Choose how you would like to begin your journey."
+                    </p>
+                  </div>
+                </div>
+
+                {/* Transition to Experience Choice Button */}
+                <div className="pt-2">
+                  <button
+                    id="choose-experience-step-btn"
+                    onClick={() => {
+                      playClickSound();
+                      setOnboardingStep('choose-experience');
+                    }}
+                    className="w-full group relative flex items-center justify-center gap-3 py-4 sm:py-4.5 px-8 rounded-2xl bg-cyan-500 hover:bg-cyan-400 active:scale-[0.99] text-slate-950 font-black text-base sm:text-lg tracking-wide uppercase shadow-2xl shadow-cyan-500/30 transition-all cursor-pointer border border-cyan-300/80"
+                  >
+                    <span>CHOOSE YOUR EXPERIENCE</span>
+                    <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+                  </button>
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* -------------------------------------------------------------
+              STEP 5: CHOOSE YOUR EXPERIENCE (TWO EQUALLY IMPORTANT CHOICES)
+              🎮 PLAY THE GAME vs. 🧠 SCENARIO OPS
+              ------------------------------------------------------------- */}
+          {onboardingStep === 'choose-experience' && (
+            <div className="w-full animate-in zoom-in-95 fade-in duration-300 space-y-6">
+              {/* Header */}
+              <div className="text-center space-y-2">
+                <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full border border-cyan-400/40 bg-cyan-950/60 text-cyan-300 text-xs font-mono font-bold tracking-wide">
+                  <Sparkles className="h-3.5 w-3.5 text-cyan-300" />
+                  <span>TWO CORE EXPERIENCES</span>
+                </div>
+                <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white uppercase font-sans tracking-tight">
+                  YOUR CYBER JOURNEY STARTS HERE
                 </h2>
-                <p className="text-xs sm:text-sm text-slate-300">
-                  Here is how you currently handle digital risks and decisions.
+                <p className="text-sm sm:text-base text-slate-300 font-medium">
+                  {player.skillCheckCompleted
+                    ? 'Choose how you want to train and explore today.'
+                    : 'Choose how you want to begin your cybersecurity training.'}
+                </p>
+                <p className="text-[11px] sm:text-xs font-mono text-cyan-400 uppercase tracking-widest pt-0.5">
+                  THERE ARE TWO WAYS TO TRAIN IN CYBERMENTOR.
                 </p>
               </div>
 
-              {/* Simple Visual Skill Indicators (10 visual blocks + percent) */}
-              <div className="rounded-3xl border-2 border-[#243754] bg-[#101a2a] p-5 sm:p-6 shadow-2xl space-y-4 text-left">
-                <div className="text-[11px] font-mono font-bold text-cyan-400 uppercase tracking-wider border-b border-[#1b2a40] pb-2">
-                  STARTING CAPABILITIES
-                </div>
-
-                {/* 1. Phishing Awareness */}
-                <div className="space-y-1.5">
-                  <div className="flex justify-between items-center text-xs font-mono">
-                    <span className="text-slate-200 font-bold">🎣 Phishing Awareness</span>
-                    <span className="text-cyan-400 font-bold">{calculatedProfile.phishing}%</span>
+              {/* Operative Status & Calibration Strip */}
+              {player.skillCheckCompleted ? (
+                <div className="w-full max-w-3xl mx-auto rounded-2xl border border-[#213854] bg-[#0f1b2b]/90 px-4 py-3 shadow-lg flex flex-wrap items-center justify-between gap-3 text-xs">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-cyan-400/60 bg-[#16253a] shadow-xs shrink-0">
+                      <svg width="24" height="24" viewBox="0 0 32 32">
+                        <rect x="6" y="5" width="20" height="9" rx="3" fill="#92400e" />
+                        <rect x="7" y="10" width="18" height="13" rx="3" fill="#e2b992" />
+                        <rect x="10" y="14" width="3" height="3" fill="#0f172a" />
+                        <rect x="19" y="14" width="3" height="3" fill="#0f172a" />
+                        <rect x="13" y="19" width="6" height="1.5" rx="0.5" fill="#c2410c" />
+                        <rect x="8" y="23" width="16" height="7" rx="2" fill="#0284c7" />
+                      </svg>
+                    </div>
+                    <div className="text-left font-mono">
+                      <span className="text-white font-bold text-xs uppercase block">
+                        OPERATIVE {player.name} • Level {player.level} {player.title}
+                      </span>
+                      <span className="text-amber-300 text-[11px] font-bold">
+                        🛡️ DIGITAL TRUST: {player.digitalTrust} / 100 • {player.completedMissions.length} Missions Resolved
+                      </span>
+                    </div>
                   </div>
-                  {renderVisualBlocks(calculatedProfile.phishing, 'bg-cyan-400')}
-                </div>
 
-                {/* 2. Privacy & Password Safety */}
-                <div className="space-y-1.5">
-                  <div className="flex justify-between items-center text-xs font-mono">
-                    <span className="text-slate-200 font-bold">🔐 Privacy &amp; Password Safety</span>
-                    <span className="text-purple-400 font-bold">{calculatedProfile.privacy}%</span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      id="home-view-profile-btn"
+                      onClick={() => {
+                        playClickSound();
+                        setOnboardingStep('profile');
+                      }}
+                      className="px-3 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-cyan-300 hover:text-white font-medium text-xs transition-colors cursor-pointer"
+                    >
+                      Review Skill Profile
+                    </button>
+                    <button
+                      id="home-retake-check-btn"
+                      onClick={() => {
+                        playClickSound();
+                        setCurrentQuestionIdx(0);
+                        setAnswers({});
+                        setSelectedOption(null);
+                        setOnboardingStep('skill-check');
+                      }}
+                      className="px-3 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white font-medium text-xs transition-colors cursor-pointer flex items-center gap-1"
+                    >
+                      <RotateCcw className="h-3 w-3" />
+                      <span>Retake Check</span>
+                    </button>
                   </div>
-                  {renderVisualBlocks(calculatedProfile.privacy, 'bg-purple-400')}
                 </div>
-
-                {/* 3. Device Safety */}
-                <div className="space-y-1.5">
-                  <div className="flex justify-between items-center text-xs font-mono">
-                    <span className="text-slate-200 font-bold">📱 Device Safety</span>
-                    <span className="text-emerald-400 font-bold">
-                      {calculatedProfile.deviceSecurity}%
-                    </span>
+              ) : (
+                <div className="w-full max-w-3xl mx-auto rounded-2xl border border-cyan-500/40 bg-cyan-950/40 px-4 py-3 shadow-lg flex flex-wrap items-center justify-between gap-3 text-xs">
+                  <div className="flex items-center gap-2.5 text-left">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-900/60 border border-cyan-400/40 text-cyan-300 shrink-0">
+                      <Brain className="h-5 w-5 text-cyan-400" />
+                    </div>
+                    <div>
+                      <span className="text-white font-bold text-xs block">
+                        INITIAL SKILL CHECK AVAILABLE
+                      </span>
+                      <span className="text-slate-300 text-[11px]">
+                        Answer 5 quick situations to calibrate your starting Digital Trust score.
+                      </span>
+                    </div>
                   </div>
-                  {renderVisualBlocks(calculatedProfile.deviceSecurity, 'bg-emerald-400')}
+                  <button
+                    id="home-take-skill-check-btn"
+                    onClick={() => {
+                      playClickSound();
+                      setCurrentQuestionIdx(0);
+                      setAnswers({});
+                      setSelectedOption(null);
+                      setOnboardingStep('skill-check');
+                    }}
+                    className="px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs uppercase tracking-wide transition-all cursor-pointer shadow-md shadow-cyan-500/20"
+                  >
+                    Take Skill Check (1 Min)
+                  </button>
                 </div>
+              )}
 
-                {/* 4. Social Engineering */}
-                <div className="space-y-1.5">
-                  <div className="flex justify-between items-center text-xs font-mono">
-                    <span className="text-slate-200 font-bold">🧠 Social Engineering</span>
-                    <span className="text-amber-400 font-bold">
-                      {calculatedProfile.socialEngineering}%
-                    </span>
-                  </div>
-                  {renderVisualBlocks(calculatedProfile.socialEngineering, 'bg-amber-400')}
-                </div>
-              </div>
-
-              {/* STRENGTH + IMPROVEMENT AREA */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-left">
-                <div className="rounded-2xl border border-emerald-700/50 bg-emerald-950/30 p-4 space-y-1">
-                  <span className="font-mono font-bold text-emerald-400 text-xs uppercase flex items-center gap-1.5">
-                    <CheckCircle2 className="h-4 w-4" />
-                    YOUR STRENGTH
-                  </span>
-                  <p className="text-xs sm:text-sm text-slate-200 font-medium leading-relaxed">
-                    {calculatedProfile.topStrengthSentence ||
-                      'You are good at protecting personal information.'}
-                  </p>
-                </div>
-
-                <div className="rounded-2xl border border-amber-700/50 bg-amber-950/30 p-4 space-y-1">
-                  <span className="font-mono font-bold text-amber-400 text-xs uppercase flex items-center gap-1.5">
-                    <AlertTriangle className="h-4 w-4" />
-                    AREA TO IMPROVE
-                  </span>
-                  <p className="text-xs sm:text-sm text-slate-200 font-medium leading-relaxed">
-                    {calculatedProfile.improvementAreaSentence ||
-                      'You sometimes trust urgent messages too quickly.'}
-                  </p>
-                </div>
-              </div>
-
-              {/* CONNECT RESULT TO THE GAME: YOUR JOURNEY BEGINS */}
-              <div className="rounded-3xl border-2 border-cyan-500/60 bg-[#0c1626] p-5 sm:p-6 shadow-2xl text-left space-y-3 relative overflow-hidden">
-                <div className="flex items-center justify-between border-b border-cyan-900/50 pb-2.5">
-                  <div className="flex items-center gap-2 text-xs font-mono font-bold text-cyan-300 uppercase">
-                    <Sparkles className="h-4 w-4 text-cyan-400" />
-                    <span>YOUR JOURNEY BEGINS</span>
-                  </div>
-                  <AudioVoiceControl
-                    textToSpeak={`The Skill Check shows that ${
-                      calculatedProfile.topStrengthSentence || 'you have good cybersecurity instincts.'
-                    } However, ${
-                      calculatedProfile.improvementAreaSentence ||
-                      'some scenarios still present real challenges.'
-                    } Let's see how you handle your first real situation.`}
-                    label="Listen"
-                    compact={true}
-                  />
-                </div>
-
-                <div className="text-xs sm:text-sm text-slate-200 leading-relaxed font-sans space-y-2">
-                  <p>
-                    "The Skill Check shows that{' '}
-                    <strong className="text-emerald-300">
-                      {calculatedProfile.topStrengthSentence || 'you have sharp instincts.'}
-                    </strong>
-                    "
-                  </p>
-                  <p>
-                    "However,{' '}
-                    <span className="text-amber-300">
-                      {calculatedProfile.improvementAreaSentence ||
-                        'some situations can catch you off guard.'}
-                    </span>
-                    "
-                  </p>
-                  <p className="text-cyan-200 font-medium pt-1">
-                    "Let's see how you handle your first real situation."
-                  </p>
-                </div>
-              </div>
-
-              {/* Enter CyberMentor Button */}
-              <div className="pt-2">
-                <button
-                  id="enter-cybermentor-btn"
-                  onClick={handleEnterCyberMentorGame}
-                  className="w-full group relative flex items-center justify-center gap-3 py-4 sm:py-4.5 px-8 rounded-2xl bg-emerald-500 hover:bg-emerald-400 active:scale-[0.99] text-slate-950 font-black text-base sm:text-lg tracking-wide uppercase shadow-2xl shadow-emerald-500/30 transition-all cursor-pointer border border-emerald-300/70"
+              {/* The Two Balanced Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6 items-stretch text-left">
+                {/* ---------------- OPTION 1: PLAY THE GAME ---------------- */}
+                <div
+                  id="option-card-play-game"
+                  className="flex flex-col justify-between rounded-3xl border-2 border-emerald-500/50 hover:border-emerald-400/90 bg-gradient-to-b from-[#101e30] via-[#0d1827] to-[#0a121e] p-6 sm:p-7 shadow-2xl transition-all duration-200 group relative"
                 >
-                  <span>ENTER CYBERMENTOR</span>
-                  <Play className="h-5 w-5 fill-slate-950 transition-transform group-hover:scale-110" />
+                  <div className="space-y-4">
+                    {/* Header Icon & Tag */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-emerald-400/50 bg-emerald-950/80 text-emerald-300 shadow-inner group-hover:scale-105 transition-transform">
+                        <Gamepad2 className="h-7 w-7 text-emerald-400" />
+                      </div>
+                      <span className="text-[11px] font-mono font-bold px-3 py-1 rounded-full bg-emerald-950/90 border border-emerald-500/40 text-emerald-300 uppercase tracking-wider">
+                        CORE EXPERIENCE
+                      </span>
+                    </div>
+
+                    {/* Title & Tagline */}
+                    <div>
+                      <div className="flex items-center gap-2 text-2xl sm:text-3xl font-black text-white uppercase tracking-wide font-sans">
+                        <span className="text-2xl">🎮</span>
+                        <span>PLAY THE GAME</span>
+                      </div>
+                      <p className="text-sm sm:text-base font-bold text-emerald-300 italic mt-1">
+                        "Explore the CyberMentor world"
+                      </p>
+                    </div>
+
+                    {/* Description */}
+                    <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                      Move through the world, investigate situations, discover clues, make decisions and see the consequences of your actions.
+                    </p>
+
+                    {/* Key Highlights */}
+                    <div className="space-y-2 pt-3 border-t border-slate-800/80 text-xs text-slate-300">
+                      <div className="flex items-center gap-2.5">
+                        <Compass className="h-4 w-4 text-emerald-400 shrink-0" />
+                        <span>Interactive 2D Campus World</span>
+                      </div>
+                      <div className="flex items-center gap-2.5">
+                        <Search className="h-4 w-4 text-emerald-400 shrink-0" />
+                        <span>Investigate Clues &amp; Suspicious Devices</span>
+                      </div>
+                      <div className="flex items-center gap-2.5">
+                        <MessageSquare className="h-4 w-4 text-emerald-400 shrink-0" />
+                        <span>Story Missions with Live Consequences</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Action Button: Equal Visual Prominence */}
+                  <div className="pt-6">
+                    <button
+                      id="choose-play-game-btn"
+                      onClick={handleChoosePlayGame}
+                      className="w-full group/btn relative flex items-center justify-center gap-2.5 py-4 px-6 rounded-2xl bg-emerald-500 hover:bg-emerald-400 active:scale-[0.99] text-slate-950 font-black text-base sm:text-lg tracking-wide uppercase shadow-xl shadow-emerald-500/25 border border-emerald-300/80 transition-all cursor-pointer"
+                    >
+                      <span>{player.completedMissions.length > 0 ? 'CONTINUE GAME' : 'PLAY THE GAME'}</span>
+                      <Play className="h-5 w-5 fill-slate-950 transition-transform group-hover/btn:scale-110" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* ---------------- OPTION 2: SCENARIO OPS ---------------- */}
+                <div
+                  id="option-card-scenario-ops"
+                  className="flex flex-col justify-between rounded-3xl border-2 border-cyan-500/50 hover:border-cyan-400/90 bg-gradient-to-b from-[#101e30] via-[#0d1827] to-[#0a121e] p-6 sm:p-7 shadow-2xl transition-all duration-200 group relative"
+                >
+                  <div className="space-y-4">
+                    {/* Header Icon & Tag */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-cyan-400/50 bg-cyan-950/80 text-cyan-300 shadow-inner group-hover:scale-105 transition-transform">
+                        <Brain className="h-7 w-7 text-cyan-400" />
+                      </div>
+                      <span className="text-[11px] font-mono font-bold px-3 py-1 rounded-full bg-cyan-950/90 border border-cyan-500/40 text-cyan-300 uppercase tracking-wider">
+                        CORE EXPERIENCE
+                      </span>
+                    </div>
+
+                    {/* Title & Tagline */}
+                    <div>
+                      <div className="flex items-center gap-2 text-2xl sm:text-3xl font-black text-white uppercase tracking-wide font-sans">
+                        <span className="text-2xl">🧠</span>
+                        <span>SCENARIO OPS</span>
+                      </div>
+                      <p className="text-sm sm:text-base font-bold text-cyan-300 italic mt-1">
+                        "Test your cybersecurity decisions"
+                      </p>
+                    </div>
+
+                    {/* Description */}
+                    <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                      Face realistic digital situations, choose what you would do, and learn from the AI Mentor.
+                    </p>
+
+                    {/* Key Highlights */}
+                    <div className="space-y-2 pt-3 border-t border-slate-800/80 text-xs text-slate-300">
+                      <div className="flex items-center gap-2.5">
+                        <Sparkles className="h-4 w-4 text-cyan-400 shrink-0" />
+                        <span>43 Realistic Digital Encounters</span>
+                      </div>
+                      <div className="flex items-center gap-2.5">
+                        <Brain className="h-4 w-4 text-cyan-400 shrink-0" />
+                        <span>Instant AI Mentor Debrief &amp; Coaching</span>
+                      </div>
+                      <div className="flex items-center gap-2.5">
+                        <Shield className="h-4 w-4 text-cyan-400 shrink-0" />
+                        <span>Dynamic Digital Trust Calibration</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Action Button: Equal Visual Prominence */}
+                  <div className="pt-6">
+                    <button
+                      id="choose-scenario-ops-btn"
+                      onClick={handleChooseScenarioOps}
+                      className="w-full group/btn relative flex items-center justify-center gap-2.5 py-4 px-6 rounded-2xl bg-cyan-500 hover:bg-cyan-400 active:scale-[0.99] text-slate-950 font-black text-base sm:text-lg tracking-wide uppercase shadow-xl shadow-cyan-500/25 border border-cyan-300/80 transition-all cursor-pointer"
+                    >
+                      <span>START SCENARIO OPS</span>
+                      <ArrowRight className="h-5 w-5 transition-transform group-hover/btn:translate-x-1" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* ---------------- NEW FEATURE BANNER: STORY MODE ---------------- */}
+              {onOpenCyberManga && (
+                <div
+                  id="home-story-mode-feature-banner"
+                  className="rounded-3xl border-2 border-indigo-500/60 hover:border-indigo-400 bg-gradient-to-r from-[#121124] via-[#0d1527] to-[#121124] p-5 sm:p-6 shadow-2xl transition-all group flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+                >
+                  <div className="flex items-start sm:items-center gap-4">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-indigo-400/60 bg-indigo-950/90 text-indigo-300 shadow-inner group-hover:scale-105 transition-transform shrink-0">
+                      <BookOpen className="h-6 w-6 text-indigo-400" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-base sm:text-lg font-black text-white uppercase tracking-wide font-sans">
+                          STORY MODE
+                        </span>
+                        <span className="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-gradient-to-r from-amber-500 to-rose-500 text-black uppercase tracking-wider">
+                          NEW FEATURE
+                        </span>
+                      </div>
+                      <p className="text-xs text-indigo-200/90 mt-0.5 font-mono">
+                        Turn your weak cybersecurity areas into interactive graphic stories. Read, investigate clues, and decide under pressure.
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    id="open-story-mode-btn"
+                    onClick={() => {
+                      playClickSound();
+                      onOpenCyberManga();
+                    }}
+                    className="w-full sm:w-auto px-5 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-mono text-xs font-black uppercase tracking-wider shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 shrink-0 transition-transform active:scale-95 cursor-pointer"
+                  >
+                    <span>ENTER STORY MODE</span>
+                    <ArrowRight className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
+
+              {/* Footer Utilities */}
+              <div className="pt-4 flex flex-wrap items-center justify-center gap-4 text-xs font-mono text-slate-400">
+                <button
+                  id="back-to-profile-summary-btn"
+                  onClick={() => {
+                    playClickSound();
+                    setOnboardingStep('profile');
+                  }}
+                  className="hover:text-cyan-300 transition-colors inline-flex items-center gap-1.5 cursor-pointer py-1.5 px-3 rounded-xl hover:bg-slate-800/60"
+                >
+                  <RotateCcw className="h-3.5 w-3.5" />
+                  <span>Review Skill Check Results</span>
                 </button>
+
+                {onOpenHowItWorks && (
+                  <button
+                    id="choose-how-it-works-btn"
+                    onClick={() => {
+                      playClickSound();
+                      onOpenHowItWorks();
+                    }}
+                    className="hover:text-cyan-300 transition-colors inline-flex items-center gap-1.5 cursor-pointer py-1.5 px-3 rounded-xl hover:bg-slate-800/60"
+                  >
+                    <HelpCircle className="h-3.5 w-3.5" />
+                    <span>How CyberMentor AI Works</span>
+                  </button>
+                )}
+
+                {onResetProgress && (
+                  <button
+                    id="choose-reset-progress-btn"
+                    onClick={() => {
+                      playClickSound();
+                      onResetProgress();
+                    }}
+                    className="hover:text-rose-400 transition-colors inline-flex items-center gap-1.5 cursor-pointer py-1.5 px-3 rounded-xl hover:bg-slate-800/60"
+                  >
+                    <RotateCcw className="h-3.5 w-3.5" />
+                    <span>Reset Recruit Progress</span>
+                  </button>
+                )}
               </div>
             </div>
           )}
         </div>
-      )}
     </div>
   );
 };

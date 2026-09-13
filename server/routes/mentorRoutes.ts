@@ -81,7 +81,7 @@ Output JSON schema:
   "adaptiveRecommendation": "What the player should practice or investigate next in the Cyber World."
 }`;
 
-    const candidateModels = ["gemini-3.8-flash", "gemini-3.6-flash"];
+    const candidateModels = ["gemini-3.8-flash", "gemini-3.1-flash-lite"];
 
     for (const modelName of candidateModels) {
       try {
@@ -106,9 +106,20 @@ Output JSON schema:
       } catch (err: any) {
         const statusCode = err?.status || err?.error?.code || err?.code;
         const msg = err?.message || String(err);
-        if (statusCode === 503 || msg.includes("503") || msg.includes("high demand")) {
+        const isTransient =
+          statusCode === 503 ||
+          statusCode === 429 ||
+          msg.includes("503") ||
+          msg.includes("429") ||
+          msg.includes("high demand") ||
+          msg.includes("RESOURCE_EXHAUSTED") ||
+          msg.includes("UNAVAILABLE");
+
+        if (isTransient) {
+          console.info(`[MentorAnalyze] Model ${modelName} temporarily busy/quota-limited, trying fallback candidate...`);
           continue;
         } else {
+          console.info(`[MentorAnalyze] Model ${modelName} unavailable, falling back.`);
           break;
         }
       }
@@ -261,7 +272,7 @@ Provide a direct, inspiring, and technically accurate answer (2-4 paragraphs max
 
 Keep the tone calm, professional, tactical, and supportive.`;
 
-      const candidateModels = ["gemini-3.8-flash", "gemini-3.6-flash"];
+      const candidateModels = ["gemini-3.8-flash", "gemini-3.1-flash-lite"];
       let answerText = "";
       for (const modelName of candidateModels) {
         try {
@@ -274,8 +285,25 @@ Keep the tone calm, professional, tactical, and supportive.`;
             answerText = response.text.trim();
             break;
           }
-        } catch (modelErr) {
-          console.warn(`Gemini ask attempt with ${modelName} failed:`, modelErr);
+        } catch (modelErr: any) {
+          const statusCode = modelErr?.status || modelErr?.error?.code || modelErr?.code;
+          const msg = modelErr?.message || String(modelErr);
+          const isTransient =
+            statusCode === 503 ||
+            statusCode === 429 ||
+            msg.includes("503") ||
+            msg.includes("429") ||
+            msg.includes("high demand") ||
+            msg.includes("RESOURCE_EXHAUSTED") ||
+            msg.includes("UNAVAILABLE");
+
+          if (isTransient) {
+            console.info(`[MentorAsk] Model ${modelName} temporarily busy/quota-limited, trying fallback candidate...`);
+            continue;
+          } else {
+            console.info(`[MentorAsk] Model ${modelName} unavailable, falling back.`);
+            break;
+          }
         }
       }
 
@@ -286,8 +314,8 @@ Keep the tone calm, professional, tactical, and supportive.`;
           answer: answerText,
         });
       }
-    } catch (err) {
-      console.warn("Gemini ask fallback triggered:", err);
+    } catch {
+      console.info("[MentorAsk] Gemini fallback active, using tactical cybersecurity knowledge base.");
     }
   }
 

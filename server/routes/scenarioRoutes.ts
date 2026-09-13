@@ -56,7 +56,7 @@ Provide concise tactical debriefing in valid JSON format:
 }
 Only output the raw JSON object, without markdown quotes or formatting.`;
 
-      const candidateModels = ["gemini-3.8-flash", "gemini-3.6-flash"];
+      const candidateModels = ["gemini-3.8-flash", "gemini-3.1-flash-lite"];
       for (const modelName of candidateModels) {
         try {
           const response = await ai.models.generateContent({
@@ -75,12 +75,29 @@ Only output the raw JSON object, without markdown quotes or formatting.`;
               ...parsed,
             });
           }
-        } catch (modelErr) {
-          console.warn(`Gemini Scenario Debrief model ${modelName} error:`, modelErr);
+        } catch (modelErr: any) {
+          const statusCode = modelErr?.status || modelErr?.error?.code || modelErr?.code;
+          const msg = modelErr?.message || String(modelErr);
+          const isTransient =
+            statusCode === 503 ||
+            statusCode === 429 ||
+            msg.includes("503") ||
+            msg.includes("429") ||
+            msg.includes("high demand") ||
+            msg.includes("RESOURCE_EXHAUSTED") ||
+            msg.includes("UNAVAILABLE");
+
+          if (isTransient) {
+            console.info(`[ScenarioDebrief] Model ${modelName} temporarily busy/quota-limited, trying fallback candidate...`);
+            continue;
+          } else {
+            console.info(`[ScenarioDebrief] Model ${modelName} encountered error, switching to deterministic fallback.`);
+            break;
+          }
         }
       }
     } catch (err) {
-      console.warn("Gemini Scenario Debrief fallback triggered:", err);
+      console.info("[ScenarioDebrief] Gemini fallback active, serving local knowledge base.");
     }
   }
 

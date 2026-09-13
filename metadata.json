@@ -1,6 +1,6 @@
 {
   "name": "CyberMentor AI",
-  "description": "An interactive cybersecurity RPG adventure where digital survival knowledge is the gameplay mechanic.",
+  "description": "An interactive cybersecurity adventure, Scenario Ops simulation, and personalized Story Mode comic learning system powered by CyberMentor AI.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

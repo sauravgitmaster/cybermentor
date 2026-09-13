@@ -34,6 +34,7 @@ import { AchievementToast } from './components/AchievementToast';
 import { SkillCheckModal } from './components/SkillCheckModal';
 import { DailyChallengeModal } from './components/DailyChallengeModal';
 import { ScenarioOpsView } from './components/scenarios/ScenarioOpsView';
+import { CyberMangaView } from './components/manga/CyberMangaView';
 import {
   setAudioMuted,
   getAudioMuted,
@@ -46,7 +47,7 @@ import {
 export default function App() {
   const [player, setPlayer] = useState<PlayerState>(() => loadSavedPlayerState());
   const [currentTab, setCurrentTab] = useState<
-    'home' | 'world' | 'location' | 'mission' | 'abilities' | 'evidence' | 'profile' | 'scenario-ops'
+    'home' | 'world' | 'location' | 'mission' | 'abilities' | 'evidence' | 'profile' | 'scenario-ops' | 'cyber-manga'
   >(() => {
     try {
       const hash = window.location.hash.replace('#', '');
@@ -57,7 +58,8 @@ export default function App() {
         hash === 'abilities' ||
         hash === 'evidence' ||
         hash === 'profile' ||
-        hash === 'scenario-ops'
+        hash === 'scenario-ops' ||
+        hash === 'cyber-manga'
       ) {
         return hash;
       }
@@ -94,7 +96,7 @@ export default function App() {
     const handleHashChange = () => {
       try {
         const hash = window.location.hash.replace('#', '');
-        const validTabs: Array<'home' | 'world' | 'location' | 'mission' | 'abilities' | 'evidence' | 'profile' | 'scenario-ops'> = [
+        const validTabs: Array<'home' | 'world' | 'location' | 'mission' | 'abilities' | 'evidence' | 'profile' | 'scenario-ops' | 'cyber-manga'> = [
           'home',
           'world',
           'location',
@@ -103,6 +105,7 @@ export default function App() {
           'evidence',
           'profile',
           'scenario-ops',
+          'cyber-manga',
         ];
         if (validTabs.includes(hash as any)) {
           setCurrentTab(hash as any);
@@ -388,6 +391,7 @@ export default function App() {
               setCurrentTab('location');
             }}
             onOpenScenarioOps={() => setCurrentTab('scenario-ops')}
+            onOpenCyberManga={() => setCurrentTab('cyber-manga')}
             onOpenHowItWorks={() => setIsHelpOpen(true)}
             onOpenSkillCheck={() => setIsSkillCheckOpen(true)}
             onNavigate={(tab) => setCurrentTab(tab)}
@@ -395,6 +399,17 @@ export default function App() {
             onToggleSound={handleToggleSound}
             onCompleteSkillCheck={handleCompleteSkillCheck}
             onResetProgress={handleResetProgress}
+          />
+        )}
+
+        {currentTab === 'cyber-manga' && (
+          <CyberMangaView
+            player={player}
+            onUpdatePlayer={(updated) => {
+              setPlayer(updated);
+              savePlayerState(updated);
+            }}
+            onExitToHome={() => setCurrentTab('home')}
           />
         )}
 
