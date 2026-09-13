@@ -26,6 +26,14 @@ export type InteractableType =
   | 'info'
   | 'exit';
 
+export interface SavedWorldLocation {
+  locationId: LocationId;
+  areaId: string;
+  position: WorldPosition;
+  direction?: Direction;
+  timestamp?: number;
+}
+
 export interface AreaExit {
   id: string;
   name: string;

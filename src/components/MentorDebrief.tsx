@@ -10,6 +10,7 @@ import {
   TrendingDown,
   BookOpen,
   Cpu,
+  Map,
 } from 'lucide-react';
 import {
   MissionData,
@@ -39,9 +40,7 @@ export const MentorDebrief: React.FC<MentorDebriefProps> = ({
   mentorFeedback,
   isLoadingFeedback,
   unlockedAbility,
-  nextMissionCode,
   onReturnToWorld,
-  onProceedNextMission,
 }) => {
   const isPositive = chosenDecision.trustChange > 0;
 
@@ -265,48 +264,20 @@ export const MentorDebrief: React.FC<MentorDebriefProps> = ({
         </div>
       )}
 
-      {/* Navigation Buttons */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-[#1a202d]">
+      {/* Navigation: Return to World Map */}
+      <div className="flex flex-col sm:flex-row items-center justify-end gap-3 pt-4 border-t border-[#1a202d]">
         <button
           id="debrief-return-world-btn"
           onClick={() => {
             playClickSound();
             onReturnToWorld();
           }}
-          className="w-full sm:w-auto rounded border border-[#232b3c] bg-[#121622] hover:bg-[#181e2e] px-5 py-2.5 text-xs font-semibold text-slate-300 transition-colors cursor-pointer"
+          className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 active:scale-95 text-slate-950 px-7 py-3 text-xs sm:text-sm font-black shadow-lg shadow-cyan-500/20 transition-all cursor-pointer uppercase tracking-wider"
         >
-          RETURN TO WORLD MAP
+          <Map className="h-4 w-4" />
+          <span>RETURN TO WORLD MAP</span>
+          <ArrowRight className="h-4 w-4 stroke-[3]" />
         </button>
-
-        {onProceedNextMission ? (
-          <button
-            id="debrief-next-mission-btn"
-            onClick={() => {
-              playClickSound();
-              onProceedNextMission();
-            }}
-            className="w-full sm:w-auto flex items-center justify-center gap-2 rounded bg-amber-400 hover:bg-amber-300 active:scale-95 text-slate-950 px-6 py-2.5 text-xs font-black shadow-lg transition-all cursor-pointer"
-          >
-            <span>
-              {nextMissionCode
-                ? `PROCEED TO NEXT ENCOUNTER (${nextMissionCode})`
-                : 'PROCEED TO NEXT ENCOUNTER'}
-            </span>
-            <ArrowRight className="h-4 w-4 stroke-[3]" />
-          </button>
-        ) : (
-          <button
-            id="debrief-all-complete-btn"
-            onClick={() => {
-              playClickSound();
-              onReturnToWorld();
-            }}
-            className="w-full sm:w-auto flex items-center justify-center gap-2 rounded bg-emerald-400 hover:bg-emerald-300 active:scale-95 text-slate-950 px-6 py-2.5 text-xs font-black shadow-lg transition-all cursor-pointer"
-          >
-            <span>ALL ENCOUNTERS RESOLVED • RETURN TO WORLD</span>
-            <ArrowRight className="h-4 w-4 stroke-[3]" />
-          </button>
-        )}
       </div>
     </div>
   );

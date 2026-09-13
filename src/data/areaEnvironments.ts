@@ -1,5 +1,5 @@
-import { PlayableArea } from '../types/world';
-import { LocationId } from '../types';
+import { PlayableArea, WorldPosition, SavedWorldLocation, Direction } from '../types/world';
+import { LocationId, PlayerState } from '../types';
 
 export const PLAYABLE_AREAS: Record<string, PlayableArea> = {
   // =========================================================================
@@ -799,3 +799,259 @@ export function getInitialAreaForLocation(
 
   return PLAYABLE_AREAS['campus-library'];
 }
+
+/**
+ * Check if a 2D coordinate is safe and walkable within an area
+ */
+export function isPositionWalkable(x: number, y: number, area: PlayableArea): boolean {
+  // 1. Boundary check: must be inside playable map bounds with padding
+  const boundaryPadding = 24;
+  const topPadding = 32;
+  if (
+    x < boundaryPadding ||
+    x > area.width - boundaryPadding ||
+    y < topPadding ||
+    y > area.height - boundaryPadding
+  ) {
+    return false;
+  }
+
+  // 2. Collision boxes check (buildings, obstacles, trees, perimeter fences)
+  const playerRadius = 14;
+  for (const box of area.collisionBoxes) {
+    if (
+      x + playerRadius > box.x &&
+      x - playerRadius < box.x + box.w &&
+      y + playerRadius > box.y &&
+      y - playerRadius < box.y + box.h
+    ) {
+      return false;
+    }
+  }
+
+  // 3. Buildings check (ensure coordinates are outside building walls)
+  for (const bld of area.buildings) {
+    if (
+      x + playerRadius > bld.x &&
+      x - playerRadius < bld.x + bld.w &&
+      y + playerRadius > bld.y &&
+      y - playerRadius < bld.y + bld.h
+    ) {
+      return false;
+    }
+  }
+
+  // 4. Props check (trees, solid desks, heavy equipment)
+  for (const prop of area.props) {
+    let propRadius = 12;
+    if (prop.type === 'tree') propRadius = 22;
+    else if (prop.type === 'desk') propRadius = 20;
+    else if (prop.type === 'terminal' || prop.type === 'wifi') propRadius = 16;
+
+    const dx = x - prop.x;
+    const dy = y - prop.y;
+    if (dx * dx + dy * dy < propRadius * propRadius) {
+      return false;
+    }
+  }
+
+  // 5. NPC proximity check (don't place inside NPC sprite collision)
+  for (const item of area.interactables) {
+    if (item.type === 'npc' && item.position) {
+      const dx = x - item.position.x;
+      const dy = y - item.position.y;
+      if (dx * dx + dy * dy < 22 * 22) {
+        return false;
+      }
+    }
+  }
+
+  return true;
+}
+
+/**
+ * Find the nearest safe walkable position to target coordinates.
+ * If the exact position is blocked by an obstacle or wall,
+ * spirals outward to locate the closest open tile.
+ */
+export function getSafeWalkablePosition(
+  pos: WorldPosition,
+  area: PlayableArea
+): WorldPosition {
+  if (isPositionWalkable(pos.x, pos.y, area)) {
+    return { x: Math.round(pos.x), y: Math.round(pos.y) };
+  }
+
+  // Concentric radial search around the target coordinates
+  const searchDistances = [10, 18, 28, 38, 50, 65, 85, 110, 140, 180];
+  const angles = [0, 45, 90, 135, 180, 225, 270, 315];
+
+  for (const dist of searchDistances) {
+    for (const deg of angles) {
+      const rad = (deg * Math.PI) / 180;
+      const testX = Math.round(pos.x + Math.cos(rad) * dist);
+      const testY = Math.round(pos.y + Math.sin(rad) * dist);
+      if (isPositionWalkable(testX, testY, area)) {
+        return { x: testX, y: testY };
+      }
+    }
+  }
+
+  // Fallback to the area's design spawn point which is guaranteed walkable
+  return { ...area.spawnPoint };
+}
+
+const GLOBAL_WORLD_POS_KEY = 'cybermentor_saved_world_position';
+const SECTOR_WORLD_POS_PREFIX = 'cybermentor_sector_pos_';
+
+/**
+ * Persist the player's world location into browser storage
+ */
+export function saveWorldLocationToStorage(savedState: SavedWorldLocation): void {
+  if (typeof window === 'undefined') return;
+  try {
+    const serialized = JSON.stringify(savedState);
+    localStorage.setItem(GLOBAL_WORLD_POS_KEY, serialized);
+    localStorage.setItem(`${SECTOR_WORLD_POS_PREFIX}${savedState.locationId}`, serialized);
+    if (savedState.locationId === 'campus') {
+      localStorage.setItem('cybermentor_active_campus_area', savedState.areaId);
+    }
+  } catch {}
+}
+
+/**
+ * Retrieve the globally saved world location if available
+ */
+export function getSavedWorldLocationFromStorage(): SavedWorldLocation | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem(GLOBAL_WORLD_POS_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as SavedWorldLocation;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Retrieve the saved position for a specific sector, checking player state and storage.
+ * Resolves to a safe walkable coordinate.
+ */
+export function getSavedPositionForSector(
+  locationId: LocationId,
+  player?: PlayerState
+): SavedWorldLocation | null {
+  // 1. Check player.lastWorldLocation if it matches this location
+  if (player?.lastWorldLocation && player.lastWorldLocation.locationId === locationId) {
+    const area = PLAYABLE_AREAS[player.lastWorldLocation.areaId];
+    if (area && area.locationId === locationId) {
+      const safePos = getSafeWalkablePosition(player.lastWorldLocation.position, area);
+      return {
+        locationId,
+        areaId: area.id,
+        position: safePos,
+        direction: player.lastWorldLocation.direction,
+        timestamp: player.lastWorldLocation.timestamp,
+      };
+    }
+  }
+
+  // 2. Check player.savedSectorLocations
+  if (player?.savedSectorLocations?.[locationId]) {
+    const entry = player.savedSectorLocations[locationId]!;
+    const area = PLAYABLE_AREAS[entry.areaId];
+    if (area && area.locationId === locationId) {
+      const safePos = getSafeWalkablePosition(entry.position, area);
+      return {
+        locationId,
+        areaId: area.id,
+        position: safePos,
+        direction: entry.direction,
+        timestamp: entry.timestamp,
+      };
+    }
+  }
+
+  // 3. Check localStorage per-sector
+  if (typeof window !== 'undefined') {
+    try {
+      const rawSector = localStorage.getItem(`${SECTOR_WORLD_POS_PREFIX}${locationId}`);
+      if (rawSector) {
+        const parsed = JSON.parse(rawSector) as SavedWorldLocation;
+        const area = PLAYABLE_AREAS[parsed.areaId];
+        if (area && area.locationId === locationId) {
+          const rawPos = parsed.position || { x: (parsed as any).x, y: (parsed as any).y };
+          const safePos = getSafeWalkablePosition(rawPos, area);
+          return {
+            locationId,
+            areaId: area.id,
+            position: safePos,
+            direction: parsed.direction,
+            timestamp: parsed.timestamp,
+          };
+        }
+      }
+
+      // 4. Check global saved position if location matches
+      const rawGlobal = localStorage.getItem(GLOBAL_WORLD_POS_KEY);
+      if (rawGlobal) {
+        const parsed = JSON.parse(rawGlobal) as SavedWorldLocation;
+        if (parsed.locationId === locationId) {
+          const area = PLAYABLE_AREAS[parsed.areaId];
+          if (area && area.locationId === locationId) {
+            const rawPos = parsed.position || { x: (parsed as any).x, y: (parsed as any).y };
+            const safePos = getSafeWalkablePosition(rawPos, area);
+            return {
+              locationId,
+              areaId: area.id,
+              position: safePos,
+              direction: parsed.direction,
+              timestamp: parsed.timestamp,
+            };
+          }
+        }
+      }
+    } catch {}
+  }
+
+  return null;
+}
+
+/**
+ * Return the natural world location and safe position where a mission takes place
+ */
+export function getDefaultMissionWorldLocation(missionId: string): SavedWorldLocation | null {
+  switch (missionId) {
+    case 'mission-01-email':
+      return {
+        locationId: 'campus',
+        areaId: 'campus-library',
+        position: { x: 230, y: 280 },
+        direction: 'up',
+      };
+    case 'mission-02-usb':
+      return {
+        locationId: 'campus',
+        areaId: 'campus-engineering-lab',
+        position: { x: 290, y: 280 },
+        direction: 'up',
+      };
+    case 'mission-03-wifi':
+      return {
+        locationId: 'campus',
+        areaId: 'campus-student-union',
+        position: { x: 490, y: 285 },
+        direction: 'up',
+      };
+    case 'mission-04-qr-scam':
+      return {
+        locationId: 'digital-city',
+        areaId: 'digital-city-transit',
+        position: { x: 390, y: 310 },
+        direction: 'up',
+      };
+    default:
+      return null;
+  }
+}
+

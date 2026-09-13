@@ -31,6 +31,7 @@ interface MissionWorkspaceProps {
   mission: MissionData;
   player: PlayerState;
   onExitMission: () => void;
+  onReturnToWorldMap?: () => void;
   onRecordTrustChange: (delta: number, reason: string) => void;
   onUnlockAbility: (abilityId: string) => void;
   onCompleteMission: (missionId: string) => void;
@@ -43,6 +44,7 @@ export const MissionWorkspace: React.FC<MissionWorkspaceProps> = ({
   mission,
   player,
   onExitMission,
+  onReturnToWorldMap,
   onRecordTrustChange,
   onUnlockAbility,
   onCompleteMission,
@@ -510,13 +512,7 @@ export const MissionWorkspace: React.FC<MissionWorkspaceProps> = ({
           mentorFeedback={mentorFeedback}
           isLoadingFeedback={isLoadingFeedback}
           unlockedAbility={unlockedAbilityData}
-          nextMissionCode={nextMission?.code}
-          onReturnToWorld={onExitMission}
-          onProceedNextMission={
-            nextMissionId && onProceedNextMission
-              ? () => onProceedNextMission(nextMissionId)
-              : undefined
-          }
+          onReturnToWorld={onReturnToWorldMap || onExitMission}
         />
       )}
     </div>

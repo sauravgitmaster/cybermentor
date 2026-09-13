@@ -15,6 +15,7 @@ import {
   Compass,
 } from 'lucide-react';
 import { WorldLocation, LocationId, PlayerState } from '../types';
+import { SavedWorldLocation } from '../types/world';
 import { MISSIONS } from '../data/missions';
 import { WorldScene } from './world/WorldScene';
 import { playClickSound } from '../utils/audio';
@@ -25,6 +26,7 @@ interface LocationViewProps {
   onBackToWorld: () => void;
   onSelectMission: (missionId: string) => void;
   onNavigateTab: (tab: 'world' | 'abilities' | 'evidence' | 'profile') => void;
+  onSaveWorldLocation?: (saved: SavedWorldLocation) => void;
 }
 
 export const LocationView: React.FC<LocationViewProps> = ({
@@ -33,6 +35,7 @@ export const LocationView: React.FC<LocationViewProps> = ({
   onBackToWorld,
   onSelectMission,
   onNavigateTab,
+  onSaveWorldLocation,
 }) => {
   const [viewMode, setViewMode] = useState<'rpg' | 'dossier'>('rpg');
 
@@ -73,6 +76,7 @@ export const LocationView: React.FC<LocationViewProps> = ({
             onSelectMission={onSelectMission}
             onNavigateTab={onNavigateTab}
             onToggleTacticalView={() => setViewMode('dossier')}
+            onSaveWorldLocation={onSaveWorldLocation}
           />
         </div>
       ) : (

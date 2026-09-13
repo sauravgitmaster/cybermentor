@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   Compass,
   Zap,
@@ -18,12 +18,15 @@ import {
   Brain,
 } from 'lucide-react';
 import { PlayerState, WorldLocation, LocationId } from '../../types';
-import { Direction, WorldPosition, WorldInteractable, AreaExit, PlayableArea } from '../../types/world';
+import { Direction, WorldPosition, WorldInteractable, AreaExit, PlayableArea, SavedWorldLocation } from '../../types/world';
 import {
   PLAYABLE_AREAS,
   CAMPUS_AREA_SEQUENCE,
   isAreaUnlocked,
   getInitialAreaForLocation,
+  getSafeWalkablePosition,
+  getSavedPositionForSector,
+  saveWorldLocationToStorage,
 } from '../../data/areaEnvironments';
 import { NPC_DIALOGUES, NPCDialogue } from '../../data/dialogues';
 import { PlayerAvatar } from './PlayerAvatar';
@@ -46,6 +49,7 @@ interface WorldSceneProps {
   onSelectMission: (missionId: string) => void;
   onNavigateTab: (tab: 'world' | 'abilities' | 'evidence' | 'profile') => void;
   onToggleTacticalView?: () => void;
+  onSaveWorldLocation?: (saved: SavedWorldLocation) => void;
 }
 
 interface TransitionState {
@@ -63,6 +67,7 @@ export const WorldScene: React.FC<WorldSceneProps> = ({
   onSelectMission,
   onNavigateTab,
   onToggleTacticalView,
+  onSaveWorldLocation,
 }) => {
   const screen = useAdaptiveScreen();
   const viewportRef = useRef<HTMLDivElement>(null);
@@ -71,8 +76,16 @@ export const WorldScene: React.FC<WorldSceneProps> = ({
     h: 520,
   });
 
+  // Check for saved location in this sector (from player state or persistent storage)
+  const initialSavedLocation = useMemo(() => {
+    return getSavedPositionForSector(location.id, player);
+  }, [location.id]);
+
   // Current active playable area
   const [currentAreaId, setCurrentAreaId] = useState<string>(() => {
+    if (initialSavedLocation && isAreaUnlocked(initialSavedLocation.areaId, player.completedMissions)) {
+      return initialSavedLocation.areaId;
+    }
     const initialArea = getInitialAreaForLocation(location.id, player.completedMissions);
     return initialArea.id;
   });
@@ -82,9 +95,14 @@ export const WorldScene: React.FC<WorldSceneProps> = ({
 
   // Player position and movement states
   const [playerPos, setPlayerPos] = useState<WorldPosition>(() => {
+    if (initialSavedLocation && initialSavedLocation.areaId === currentArea.id) {
+      return getSafeWalkablePosition(initialSavedLocation.position, currentArea);
+    }
     return currentArea.spawnPoint;
   });
-  const [direction, setDirection] = useState<Direction>('down');
+  const [direction, setDirection] = useState<Direction>(() => {
+    return initialSavedLocation?.direction || 'down';
+  });
   const [isMoving, setIsMoving] = useState<boolean>(false);
   const [nearestInteractable, setNearestInteractable] = useState<WorldInteractable | null>(null);
   const [nearestExit, setNearestExit] = useState<AreaExit | null>(null);
@@ -118,19 +136,71 @@ export const WorldScene: React.FC<WorldSceneProps> = ({
 
   // Active keys ref for smooth 60fps movement
   const keysPressed = useRef<Set<string>>(new Set());
-  const playerPosRef = useRef<WorldPosition>(currentArea.spawnPoint);
+  const playerPosRef = useRef<WorldPosition>(playerPos);
   playerPosRef.current = playerPos;
+
+  // Persist current location state helper
+  const saveCurrentWorldLocation = useCallback(
+    (pos = playerPosRef.current, areaId = currentAreaId, dir = direction) => {
+      const stateToSave: SavedWorldLocation = {
+        locationId: location.id,
+        areaId,
+        position: { x: Math.round(pos.x), y: Math.round(pos.y) },
+        direction: dir,
+        timestamp: Date.now(),
+      };
+      saveWorldLocationToStorage(stateToSave);
+      if (onSaveWorldLocation) {
+        onSaveWorldLocation(stateToSave);
+      }
+    },
+    [location.id, currentAreaId, direction, onSaveWorldLocation]
+  );
+
+  // Helper to cleanly save player coordinates before launching a mission
+  const handleLaunchMission = useCallback(
+    (missionId: string) => {
+      saveCurrentWorldLocation(playerPosRef.current, currentAreaId, direction);
+      onSelectMission(missionId);
+    },
+    [saveCurrentWorldLocation, currentAreaId, direction, onSelectMission]
+  );
 
   // Track location changes (e.g. if user switched from macro map)
   useEffect(() => {
-    const targetArea = getInitialAreaForLocation(location.id, player.completedMissions);
-    setCurrentAreaId(targetArea.id);
-    setPlayerPos(targetArea.spawnPoint);
-    playerPosRef.current = targetArea.spawnPoint;
-    setAreaTitleBanner(targetArea.name);
+    const saved = getSavedPositionForSector(location.id, player);
+    if (saved && isAreaUnlocked(saved.areaId, player.completedMissions)) {
+      const area = PLAYABLE_AREAS[saved.areaId] || getInitialAreaForLocation(location.id, player.completedMissions);
+      setCurrentAreaId(area.id);
+      const safePos = getSafeWalkablePosition(saved.position, area);
+      setPlayerPos(safePos);
+      playerPosRef.current = safePos;
+      if (saved.direction) setDirection(saved.direction);
+      setAreaTitleBanner(area.name);
+    } else {
+      const targetArea = getInitialAreaForLocation(location.id, player.completedMissions);
+      setCurrentAreaId(targetArea.id);
+      setPlayerPos(targetArea.spawnPoint);
+      playerPosRef.current = targetArea.spawnPoint;
+      setAreaTitleBanner(targetArea.name);
+    }
     const timer = setTimeout(() => setAreaTitleBanner(null), 2400);
     return () => clearTimeout(timer);
   }, [location.id]);
+
+  // Continuously persist position when movement stops
+  useEffect(() => {
+    if (!isMoving) {
+      saveCurrentWorldLocation(playerPosRef.current, currentAreaId, direction);
+    }
+  }, [isMoving, currentAreaId, direction, saveCurrentWorldLocation]);
+
+  // Persist location on unmount
+  useEffect(() => {
+    return () => {
+      saveCurrentWorldLocation(playerPosRef.current, currentAreaId, direction);
+    };
+  }, [saveCurrentWorldLocation, currentAreaId, direction]);
 
   // Track viewport size on resize
   useEffect(() => {
@@ -219,6 +289,7 @@ export const WorldScene: React.FC<WorldSceneProps> = ({
         }
         setPlayerPos(exit.targetSpawnPoint);
         playerPosRef.current = exit.targetSpawnPoint;
+        saveCurrentWorldLocation(exit.targetSpawnPoint, exit.targetAreaId, exit.direction);
 
         // Begin fade-in
         setTransitionState((prev) => (prev ? { ...prev, phase: 'fade-in' } : null));
@@ -330,7 +401,7 @@ export const WorldScene: React.FC<WorldSceneProps> = ({
         } else if (nearestInteractable.id && NPC_DIALOGUES[nearestInteractable.id]) {
           setActiveDialogue(NPC_DIALOGUES[nearestInteractable.id]);
         } else if (nearestInteractable.missionId) {
-          onSelectMission(nearestInteractable.missionId);
+          handleLaunchMission(nearestInteractable.missionId);
         }
         break;
       case 'terminal-world':
@@ -890,7 +961,7 @@ export const WorldScene: React.FC<WorldSceneProps> = ({
                     if (dialogue) {
                       setActiveDialogue(dialogue);
                     } else if (npc.missionId) {
-                      onSelectMission(npc.missionId);
+                      handleLaunchMission(npc.missionId);
                     }
                   }}
                 />
@@ -960,7 +1031,7 @@ export const WorldScene: React.FC<WorldSceneProps> = ({
             }
             onStartMission={(missionId) => {
               setActiveDialogue(null);
-              onSelectMission(missionId);
+              handleLaunchMission(missionId);
             }}
             onClose={() => setActiveDialogue(null)}
           />

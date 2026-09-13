@@ -1,3 +1,5 @@
+import type { SavedWorldLocation } from './types/world';
+
 export type LocationId =
   | 'campus'
   | 'home'
@@ -84,6 +86,8 @@ export interface PlayerState {
   skillCheckCompleted?: boolean;
   dailyChallengeCompletedDate?: string;
   dailyChallengeStreak?: number;
+  lastWorldLocation?: SavedWorldLocation;
+  savedSectorLocations?: Partial<Record<LocationId, SavedWorldLocation>>;
 }
 
 export interface NPC {

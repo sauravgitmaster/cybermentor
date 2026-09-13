@@ -7,6 +7,12 @@ import {
   Achievement,
   CyberSkillProfile,
 } from './types';
+import { SavedWorldLocation } from './types/world';
+import {
+  saveWorldLocationToStorage,
+  getSavedWorldLocationFromStorage,
+  getDefaultMissionWorldLocation,
+} from './data/areaEnvironments';
 import { WORLD_LOCATIONS } from './data/locations';
 import { MISSIONS } from './data/missions';
 import {
@@ -58,7 +64,11 @@ export default function App() {
     } catch {}
     return 'home';
   });
-  const [selectedLocationId, setSelectedLocationId] = useState<LocationId>('campus');
+  const [selectedLocationId, setSelectedLocationId] = useState<LocationId>(() => {
+    const saved = getSavedWorldLocationFromStorage();
+    if (saved && saved.locationId) return saved.locationId;
+    return 'campus';
+  });
   const [activeMissionId, setActiveMissionId] = useState<string>('mission-01-email');
   const [soundMuted, setSoundMuted] = useState<boolean>(false);
   const [isHelpOpen, setIsHelpOpen] = useState<boolean>(false);
@@ -248,9 +258,37 @@ export default function App() {
     setIsSkillCheckOpen(false);
   };
 
+  const handleSaveWorldLocation = (saved: SavedWorldLocation) => {
+    setPlayer((prev) => ({
+      ...prev,
+      lastWorldLocation: saved,
+      savedSectorLocations: {
+        ...(prev.savedSectorLocations || {}),
+        [saved.locationId]: saved,
+      },
+    }));
+    saveWorldLocationToStorage(saved);
+  };
+
   const handleResetProgress = () => {
     // Reset backend
     api.resetPlayerState().catch(() => {});
+
+    // Clear persisted world positions
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.removeItem('cybermentor_saved_world_position');
+        localStorage.removeItem('cybermentor_active_campus_area');
+        const keysToRemove: string[] = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i);
+          if (k && k.startsWith('cybermentor_sector_pos_')) {
+            keysToRemove.push(k);
+          }
+        }
+        keysToRemove.forEach((k) => localStorage.removeItem(k));
+      } catch {}
+    }
 
     const fresh = resetPlayerState();
     setPlayer(fresh);
@@ -266,8 +304,48 @@ export default function App() {
   };
 
   const handleSelectMission = (missionId: string) => {
+    const targetMission = MISSIONS[missionId];
+    if (targetMission) {
+      setSelectedLocationId(targetMission.locationId);
+      setPlayer((prev) => {
+        if (!prev.savedSectorLocations?.[targetMission.locationId]) {
+          const defaultLoc = getDefaultMissionWorldLocation(missionId);
+          if (defaultLoc) {
+            saveWorldLocationToStorage(defaultLoc);
+            return {
+              ...prev,
+              currentLocationId: targetMission.locationId,
+              lastWorldLocation: defaultLoc,
+              savedSectorLocations: {
+                ...(prev.savedSectorLocations || {}),
+                [targetMission.locationId]: defaultLoc,
+              },
+            };
+          }
+        }
+        return { ...prev, currentLocationId: targetMission.locationId };
+      });
+    }
     setActiveMissionId(missionId);
     setCurrentTab('mission');
+  };
+
+  const handleReturnToWorldMapFromMission = () => {
+    let targetSector: LocationId = selectedLocationId;
+
+    if (player.lastWorldLocation?.locationId) {
+      targetSector = player.lastWorldLocation.locationId;
+    } else if (currentMission?.locationId) {
+      targetSector = currentMission.locationId;
+    }
+
+    setSelectedLocationId(targetSector);
+    setPlayer((prev) => ({
+      ...prev,
+      currentLocationId: targetSector,
+    }));
+    // Return to the explorable 2D RPG world scene
+    setCurrentTab('location');
   };
 
   const currentMission = MISSIONS[activeMissionId] || MISSIONS['mission-01-email'];
@@ -349,6 +427,7 @@ export default function App() {
             onBackToWorld={() => setCurrentTab('world')}
             onSelectMission={handleSelectMission}
             onNavigateTab={(tab) => setCurrentTab(tab)}
+            onSaveWorldLocation={handleSaveWorldLocation}
           />
         )}
 
@@ -357,33 +436,13 @@ export default function App() {
             key={currentMission.id}
             mission={currentMission}
             player={player}
-            onExitMission={() => {
-              setCurrentTab('location');
-            }}
+            onExitMission={handleReturnToWorldMapFromMission}
+            onReturnToWorldMap={handleReturnToWorldMapFromMission}
             onRecordTrustChange={handleRecordTrustChange}
             onUnlockAbility={handleUnlockAbility}
             onUnlockAchievement={handleUnlockAchievement}
             onCompleteMission={handleCompleteMission}
             onAddEvidence={handleAddEvidence}
-            onProceedNextMission={(nextId) => {
-              const nextMission = MISSIONS[nextId];
-              if (nextMission?.locationId) {
-                setSelectedLocationId(nextMission.locationId);
-                setPlayer((prev) => ({ ...prev, currentLocationId: nextMission.locationId }));
-              }
-              // Sync area progression in 2D world
-              if (nextId === 'mission-01-email') {
-                localStorage.setItem('cybermentor_active_campus_area', 'campus-library');
-              } else if (nextId === 'mission-02-usb') {
-                localStorage.setItem('cybermentor_active_campus_area', 'campus-engineering-lab');
-              } else if (nextId === 'mission-03-wifi') {
-                localStorage.setItem('cybermentor_active_campus_area', 'campus-student-union');
-              } else if (nextId === 'mission-04-qr-scam') {
-                localStorage.setItem('cybermentor_active_campus_area', 'campus-secops-desk');
-              }
-              setActiveMissionId(nextId);
-              setCurrentTab('mission');
-            }}
           />
         )}
 
