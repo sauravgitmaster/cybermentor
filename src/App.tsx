@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   PlayerState,
   LocationId,
@@ -258,17 +258,9 @@ export default function App() {
     setIsSkillCheckOpen(false);
   };
 
-  const handleSaveWorldLocation = (saved: SavedWorldLocation) => {
-    setPlayer((prev) => ({
-      ...prev,
-      lastWorldLocation: saved,
-      savedSectorLocations: {
-        ...(prev.savedSectorLocations || {}),
-        [saved.locationId]: saved,
-      },
-    }));
+  const handleSaveWorldLocation = useCallback((saved: SavedWorldLocation) => {
     saveWorldLocationToStorage(saved);
-  };
+  }, []);
 
   const handleResetProgress = () => {
     // Reset backend
@@ -333,7 +325,10 @@ export default function App() {
   const handleReturnToWorldMapFromMission = () => {
     let targetSector: LocationId = selectedLocationId;
 
-    if (player.lastWorldLocation?.locationId) {
+    const savedWorld = getSavedWorldLocationFromStorage();
+    if (savedWorld?.locationId) {
+      targetSector = savedWorld.locationId;
+    } else if (player.lastWorldLocation?.locationId) {
       targetSector = player.lastWorldLocation.locationId;
     } else if (currentMission?.locationId) {
       targetSector = currentMission.locationId;

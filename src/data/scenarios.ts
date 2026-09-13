@@ -1,4 +1,6 @@
 import { Scenario } from '../types/scenario';
+import { EXTENDED_SCENARIOS } from './scenariosExtended';
+import { BATCH3_SCENARIOS } from './scenariosBatch3';
 
 export const SCENARIOS: Scenario[] = [
   // 01 — Suspicious University Email
@@ -1447,4 +1449,6 @@ export const SCENARIOS: Scenario[] = [
       },
     },
   },
+  ...EXTENDED_SCENARIOS,
+  ...BATCH3_SCENARIOS,
 ];

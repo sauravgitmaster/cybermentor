@@ -140,6 +140,9 @@ export const WorldScene: React.FC<WorldSceneProps> = ({
   playerPosRef.current = playerPos;
 
   // Persist current location state helper
+  const onSaveWorldLocationRef = useRef(onSaveWorldLocation);
+  onSaveWorldLocationRef.current = onSaveWorldLocation;
+
   const saveCurrentWorldLocation = useCallback(
     (pos = playerPosRef.current, areaId = currentAreaId, dir = direction) => {
       const stateToSave: SavedWorldLocation = {
@@ -150,24 +153,36 @@ export const WorldScene: React.FC<WorldSceneProps> = ({
         timestamp: Date.now(),
       };
       saveWorldLocationToStorage(stateToSave);
-      if (onSaveWorldLocation) {
-        onSaveWorldLocation(stateToSave);
-      }
     },
-    [location.id, currentAreaId, direction, onSaveWorldLocation]
+    [location.id, currentAreaId, direction]
   );
 
   // Helper to cleanly save player coordinates before launching a mission
   const handleLaunchMission = useCallback(
     (missionId: string) => {
-      saveCurrentWorldLocation(playerPosRef.current, currentAreaId, direction);
+      const stateToSave: SavedWorldLocation = {
+        locationId: location.id,
+        areaId: currentAreaId,
+        position: { x: Math.round(playerPosRef.current.x), y: Math.round(playerPosRef.current.y) },
+        direction,
+        timestamp: Date.now(),
+      };
+      saveWorldLocationToStorage(stateToSave);
+      if (onSaveWorldLocationRef.current) {
+        onSaveWorldLocationRef.current(stateToSave);
+      }
       onSelectMission(missionId);
     },
-    [saveCurrentWorldLocation, currentAreaId, direction, onSelectMission]
+    [location.id, currentAreaId, direction, onSelectMission]
   );
 
   // Track location changes (e.g. if user switched from macro map)
+  const isFirstMountRef = useRef(true);
   useEffect(() => {
+    if (isFirstMountRef.current) {
+      isFirstMountRef.current = false;
+      return;
+    }
     const saved = getSavedPositionForSector(location.id, player);
     if (saved && isAreaUnlocked(saved.areaId, player.completedMissions)) {
       const area = PLAYABLE_AREAS[saved.areaId] || getInitialAreaForLocation(location.id, player.completedMissions);
@@ -188,26 +203,53 @@ export const WorldScene: React.FC<WorldSceneProps> = ({
     return () => clearTimeout(timer);
   }, [location.id]);
 
-  // Continuously persist position when movement stops
+  // Continuously persist position only when movement transitions from true -> false
+  const wasMovingRef = useRef(false);
   useEffect(() => {
-    if (!isMoving) {
+    if (wasMovingRef.current && !isMoving) {
       saveCurrentWorldLocation(playerPosRef.current, currentAreaId, direction);
     }
+    wasMovingRef.current = isMoving;
   }, [isMoving, currentAreaId, direction, saveCurrentWorldLocation]);
 
-  // Persist location on unmount
+  // Keep latest state ref for clean unmount persistence
+  const unmountStateRef = useRef({
+    locationId: location.id,
+    areaId: currentAreaId,
+    pos: playerPos,
+    dir: direction,
+  });
+  unmountStateRef.current = {
+    locationId: location.id,
+    areaId: currentAreaId,
+    pos: playerPos,
+    dir: direction,
+  };
+
+  // Persist location strictly on unmount (NOT on re-renders)
   useEffect(() => {
     return () => {
-      saveCurrentWorldLocation(playerPosRef.current, currentAreaId, direction);
+      const current = unmountStateRef.current;
+      const stateToSave: SavedWorldLocation = {
+        locationId: current.locationId,
+        areaId: current.areaId,
+        position: { x: Math.round(current.pos.x), y: Math.round(current.pos.y) },
+        direction: current.dir,
+        timestamp: Date.now(),
+      };
+      saveWorldLocationToStorage(stateToSave);
     };
-  }, [saveCurrentWorldLocation, currentAreaId, direction]);
+  }, []);
 
   // Track viewport size on resize
   useEffect(() => {
     const updateSize = () => {
       if (viewportRef.current) {
         const rect = viewportRef.current.getBoundingClientRect();
-        setViewportSize({ w: rect.width, h: rect.height });
+        setViewportSize((prev) => {
+          if (prev.w === rect.width && prev.h === rect.height) return prev;
+          return { w: rect.width, h: rect.height };
+        });
       }
     };
     updateSize();

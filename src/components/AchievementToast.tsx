@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Award, Sparkles, X } from 'lucide-react';
 import { Achievement } from '../types';
 import { playSuccessSound } from '../utils/audio';
@@ -12,15 +12,18 @@ export const AchievementToast: React.FC<AchievementToastProps> = ({
   achievement,
   onDismiss,
 }) => {
+  const onDismissRef = useRef(onDismiss);
+  onDismissRef.current = onDismiss;
+
   useEffect(() => {
     if (achievement) {
       playSuccessSound();
       const timer = setTimeout(() => {
-        onDismiss();
+        onDismissRef.current();
       }, 5000);
       return () => clearTimeout(timer);
     }
-  }, [achievement, onDismiss]);
+  }, [achievement]);
 
   if (!achievement) return null;
 

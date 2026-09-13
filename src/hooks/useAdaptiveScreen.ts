@@ -125,15 +125,24 @@ export function useAdaptiveScreen(): AdaptiveScreenState {
       // Debounce with requestAnimationFrame for smooth 60fps adaptation
       if (timeoutId) cancelAnimationFrame(timeoutId);
       timeoutId = requestAnimationFrame(() => {
-        setScreen(getScreenState());
+        setScreen((prev) => {
+          const next = getScreenState();
+          if (
+            prev.viewportWidth === next.viewportWidth &&
+            prev.viewportHeight === next.viewportHeight &&
+            prev.deviceMode === next.deviceMode &&
+            prev.orientation === next.orientation &&
+            prev.inputMode === next.inputMode
+          ) {
+            return prev;
+          }
+          return next;
+        });
       });
     };
 
     window.addEventListener('resize', handleResize, { passive: true });
     window.addEventListener('orientationchange', handleResize, { passive: true });
-
-    // Initial check
-    handleResize();
 
     return () => {
       if (timeoutId) cancelAnimationFrame(timeoutId);
