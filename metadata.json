@@ -1,6 +1,6 @@
 {
   "name": "CyberMentor AI",
-  "description": "An interactive cybersecurity adventure, Scenario Ops simulation, and personalized Story Mode comic learning system powered by CyberMentor AI.",
+  "description": "An interactive cybersecurity adventure and Scenario Ops simulation learning system powered by CyberMentor AI.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

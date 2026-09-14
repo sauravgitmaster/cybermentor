@@ -120,10 +120,9 @@ interface LandingIntroProps {
   nextMission?: MissionData;
   onStartAdventure: (firstMissionId?: string) => void;
   onOpenScenarioOps?: () => void;
-  onOpenCyberManga?: () => void;
   onOpenHowItWorks: () => void;
   onOpenSkillCheck?: () => void;
-  onNavigate?: (tab: 'world' | 'abilities' | 'evidence' | 'profile' | 'cyber-manga') => void;
+  onNavigate?: (tab: 'world' | 'abilities' | 'evidence' | 'profile') => void;
   soundMuted?: boolean;
   onToggleSound?: () => void;
   onCompleteSkillCheck?: (profile: CyberSkillProfile) => void;
@@ -136,7 +135,6 @@ export const LandingIntro: React.FC<LandingIntroProps> = ({
   player,
   onStartAdventure,
   onOpenScenarioOps,
-  onOpenCyberManga,
   onOpenHowItWorks,
   onOpenSkillCheck,
   onNavigate,
@@ -1202,45 +1200,6 @@ export const LandingIntro: React.FC<LandingIntroProps> = ({
                   </div>
                 </div>
               </div>
-
-              {/* ---------------- NEW FEATURE BANNER: STORY MODE ---------------- */}
-              {onOpenCyberManga && (
-                <div
-                  id="home-story-mode-feature-banner"
-                  className="rounded-3xl border-2 border-indigo-500/60 hover:border-indigo-400 bg-gradient-to-r from-[#121124] via-[#0d1527] to-[#121124] p-5 sm:p-6 shadow-2xl transition-all group flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
-                >
-                  <div className="flex items-start sm:items-center gap-4">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-indigo-400/60 bg-indigo-950/90 text-indigo-300 shadow-inner group-hover:scale-105 transition-transform shrink-0">
-                      <BookOpen className="h-6 w-6 text-indigo-400" />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-base sm:text-lg font-black text-white uppercase tracking-wide font-sans">
-                          STORY MODE
-                        </span>
-                        <span className="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-gradient-to-r from-amber-500 to-rose-500 text-black uppercase tracking-wider">
-                          NEW FEATURE
-                        </span>
-                      </div>
-                      <p className="text-xs text-indigo-200/90 mt-0.5 font-mono">
-                        Turn your weak cybersecurity areas into interactive graphic stories. Read, investigate clues, and decide under pressure.
-                      </p>
-                    </div>
-                  </div>
-
-                  <button
-                    id="open-story-mode-btn"
-                    onClick={() => {
-                      playClickSound();
-                      onOpenCyberManga();
-                    }}
-                    className="w-full sm:w-auto px-5 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-mono text-xs font-black uppercase tracking-wider shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 shrink-0 transition-transform active:scale-95 cursor-pointer"
-                  >
-                    <span>ENTER STORY MODE</span>
-                    <ArrowRight className="h-4 w-4" />
-                  </button>
-                </div>
-              )}
 
               {/* Footer Utilities */}
               <div className="pt-4 flex flex-wrap items-center justify-center gap-4 text-xs font-mono text-slate-400">
