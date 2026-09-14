@@ -15,10 +15,14 @@ import {
   Calendar,
   Sparkles,
   Lock,
+  AlertTriangle,
+  Trophy,
+  Scale,
 } from 'lucide-react';
 import { PlayerState } from '../types';
 import { playClickSound } from '../utils/audio';
 import { useAdaptiveScreen } from '../hooks/useAdaptiveScreen';
+import { getActiveConsequences } from '../data/consequences';
 
 interface GameHeaderProps {
   player: PlayerState;
@@ -29,6 +33,9 @@ interface GameHeaderProps {
   onOpenHelp: () => void;
   onOpenSkillCheck?: () => void;
   onOpenDailyChallenge?: () => void;
+  onOpenConsequences?: () => void;
+  onOpenSquadBoard?: () => void;
+  onOpenEthics?: () => void;
   onResetProgress: () => void;
 }
 
@@ -41,12 +48,16 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
   onOpenHelp,
   onOpenSkillCheck,
   onOpenDailyChallenge,
+  onOpenConsequences,
+  onOpenSquadBoard,
+  onOpenEthics,
   onResetProgress,
 }) => {
   const screen = useAdaptiveScreen();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const unlockedAbilitiesCount = player.abilities.filter((a) => a.unlocked).length;
+  const activeThreats = getActiveConsequences(player.campaignFlags || ({} as any));
 
   // Close menu on outside click
   useEffect(() => {
@@ -117,6 +128,22 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
             <span className="hidden xs:inline">HOME</span>
           </button>
 
+          {/* Active Incident Breach Alert if consequences triggered */}
+          {activeThreats.length > 0 && onOpenConsequences && (
+            <button
+              id="header-active-threats-btn"
+              onClick={() => {
+                playClickSound();
+                onOpenConsequences();
+              }}
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl border border-rose-500/80 bg-rose-950/70 hover:bg-rose-900/80 text-xs font-mono font-bold text-rose-200 transition-all cursor-pointer shadow-xs touch-target min-h-[36px] animate-pulse"
+              title="Active incident breaches require remediation!"
+            >
+              <AlertTriangle className="h-3.5 w-3.5 text-rose-400 shrink-0" />
+              <span>BREACHES ({activeThreats.length})</span>
+            </button>
+          )}
+
           {/* Contextual In-Game Systems Menu */}
           <button
             id="nav-tab-menu"
@@ -164,11 +191,79 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
 
           {/* Dropdown Menu for Contextual Systems */}
           {isMenuOpen && (
-            <div className="absolute right-0 top-11 sm:top-12 w-60 max-w-[calc(100vw-1.5rem)] rounded-2xl border-2 border-[#2b4163] bg-[#0c1524]/98 shadow-2xl p-2.5 z-50 animate-in fade-in zoom-in-95 duration-150 backdrop-blur-md ring-1 ring-white/10">
+            <div className="absolute right-0 top-11 sm:top-12 w-64 max-w-[calc(100vw-1.5rem)] rounded-2xl border-2 border-[#2b4163] bg-[#0c1524]/98 shadow-2xl p-2.5 z-50 animate-in fade-in zoom-in-95 duration-150 backdrop-blur-md ring-1 ring-white/10">
               <div className="px-3 py-1.5 border-b border-[#1f314d] text-[10px] font-mono font-bold text-slate-400 uppercase tracking-wider">
                 Operative Systems
               </div>
               <div className="mt-1 space-y-1">
+                {/* Active Incident Desk */}
+                {onOpenConsequences && (
+                  <button
+                    onClick={() => {
+                      playClickSound();
+                      setIsMenuOpen(false);
+                      onOpenConsequences();
+                    }}
+                    className="w-full flex items-center justify-between px-3 py-2 rounded-xl hover:bg-[#182942] text-xs font-medium text-slate-200 hover:text-white transition-colors text-left"
+                  >
+                    <span className="flex items-center gap-2">
+                      <AlertTriangle className="h-4 w-4 text-rose-400" />
+                      <span>Incident Breaches</span>
+                    </span>
+                    <span
+                      className={`text-[10px] px-1.5 py-0.5 rounded font-mono font-bold ${
+                        activeThreats.length > 0
+                          ? 'bg-rose-950/80 border border-rose-700 text-rose-300'
+                          : 'bg-emerald-950/60 text-emerald-400'
+                      }`}
+                    >
+                      {activeThreats.length > 0 ? `${activeThreats.length} ACTIVE` : 'CLEAN'}
+                    </span>
+                  </button>
+                )}
+
+                {/* Squad Leaderboard */}
+                {onOpenSquadBoard && (
+                  <button
+                    onClick={() => {
+                      playClickSound();
+                      setIsMenuOpen(false);
+                      onOpenSquadBoard();
+                    }}
+                    className="w-full flex items-center justify-between px-3 py-2 rounded-xl hover:bg-[#182942] text-xs font-medium text-amber-300 hover:text-amber-200 transition-colors text-left"
+                  >
+                    <span className="flex items-center gap-2">
+                      <Trophy className="h-4 w-4 text-amber-400" />
+                      <span>Squad Leaderboard</span>
+                    </span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-950/60 border border-amber-800 text-amber-300 font-mono">
+                      CM-DEMO
+                    </span>
+                  </button>
+                )}
+
+                {/* Cyber Ethics Engine */}
+                {onOpenEthics && (
+                  <button
+                    onClick={() => {
+                      playClickSound();
+                      setIsMenuOpen(false);
+                      onOpenEthics();
+                    }}
+                    className="w-full flex items-center justify-between px-3 py-2 rounded-xl hover:bg-[#182942] text-xs font-medium text-indigo-300 hover:text-indigo-200 transition-colors text-left"
+                  >
+                    <span className="flex items-center gap-2">
+                      <Scale className="h-4 w-4 text-indigo-400" />
+                      <span>Cyber Ethics Dilemmas</span>
+                    </span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-indigo-950/60 border border-indigo-800 text-indigo-300 font-mono">
+                      {player.ethicsScore ?? 50}%
+                    </span>
+                  </button>
+                )}
+
+                <div className="my-1 border-t border-[#1f314d]" />
+
                 <button
                   onClick={() => handleMenuSelect('world')}
                   className="w-full flex items-center justify-between px-3 py-2 rounded-xl hover:bg-[#182942] text-xs font-medium text-slate-200 hover:text-white transition-colors text-left"

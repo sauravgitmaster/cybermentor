@@ -17,6 +17,20 @@ export const MISSIONS: Record<string, MissionData> = {
       location: 'Campus Library Commons',
       status: 'Anxious / Stressed',
     },
+    doctrineBrief: {
+      title: 'DOCTRINE // PHISHING TRIAGE & DOMAIN SPOOFING',
+      durationHint: '45 sec',
+      facts: [
+        '91% of targeted enterprise and campus intrusions originate from spear-phishing with spoofed domains or disguised binaries.',
+        'Display names are unverified client strings with zero cryptographic authority; transport envelope headers (RFC 5322 From vs Return-Path) reveal the true sender.',
+        'Double-extension files (.pdf.exe) exploit operating system extension hiding to execute compiled binaries on unsuspecting endpoints.',
+      ],
+      attackerModel:
+        'Adversaries weaponize cognitive panic and manufactured urgency (such as immediate portal deactivation or missing finals) to induce reflexive credential submission before the target examines routing headers.',
+      whatGoodLooksLike:
+        'Zero Trust in unsolicited urgent directives. Inspect the raw From header against authoritative MX records, verify SPF/DKIM flags, inspect link targets without clicking, and report the message directly to campus SecOps without forwarding or running files.',
+      relatedAbility: 'ANALYZE',
+    },
     briefing: {
       situation: 'A panicked student flags you down near the library terminal room clutching a laptop with an urgent notice on screen.',
       npcDialogue: '"Hey, look at this! I just got an urgent message saying my student account and course portals will be terminated at midnight unless I confirm my credentials right now. Finals registration closes tomorrow—if I lose my portal, I lose my semester!"',
@@ -191,46 +205,46 @@ Un1versity Support Operations Directorate`,
     decisions: [
       {
         id: 'decision-report-isolate',
-        label: 'Advise Jordan to stop, report to Campus SecOps, and flag the malicious sender',
+        label: 'Advise Jordan to stop, report to Campus SecOps, and quarantine the message',
         type: 'defensive',
         description: 'Quarantine the email, prevent Jordan from clicking any links or opening the payload, and submit the message headers to the official Campus IT Security Desk (soc@university.edu).',
-        trustChange: 12,
+        trustChange: 15,
         isOptimal: true,
         immediateReaction: 'SecOps confirms the threat. Domain is blacklisted across the campus DNS resolver within 4 minutes.',
         consequenceText: 'Jordan sighs with immense relief: "You saved my entire semester! If I had entered my password or opened that file, my financial aid and registration would have been compromised." SecOps issues a campus-wide alert crediting the quick report.',
         screenEffect: 'clean',
       },
       {
-        id: 'decision-open-attachment',
-        label: 'Open the attachment to "see what kind of form" the IT department sent',
+        id: 'decision-click-link',
+        label: 'Click the verification link to inspect the student portal login page',
         type: 'reckless',
-        description: 'Double-click the .pdf.exe file directly on the student workstation to inspect its contents.',
-        trustChange: -10,
+        description: 'Navigate to http://192.241.82.11 in the browser to see the login screen.',
+        trustChange: -15,
         isOptimal: false,
-        immediateReaction: 'ALERT: Suspicious child process spawned (powershell.exe -enc ...). Memory defense tripwire triggered.',
-        consequenceText: 'The screen flickers as an unauthorized background process attempts to dump local credentials. The lab network quarantine immediately disconnects the machine. Jordan is frozen in horror as an IT security tech arrives to seize the machine for forensic wiping.',
+        immediateReaction: 'Insecure connection established. Browser warnings bypassed. Credential harvester active.',
+        consequenceText: 'The browser connects over unencrypted HTTP to a replica of the campus SSO portal. Exposing the browser leaks Jordan\'s IP, session cookies, and login credentials to an offshore proxy.',
         screenEffect: 'threat-alert',
       },
       {
-        id: 'decision-click-link',
-        label: 'Click the link to verify if the page looks like the real university portal',
+        id: 'decision-open-attachment',
+        label: 'Open Semester_Schedule_Update.pdf.exe to inspect the verification form',
         type: 'reckless',
-        description: 'Navigate to http://192.241.82.11 in the browser to see the login screen.',
-        trustChange: -8,
+        description: 'Double-click the .pdf.exe file directly on the student workstation to inspect its contents.',
+        trustChange: -20,
         isOptimal: false,
-        immediateReaction: 'Insecure connection established. Browser warnings bypassed.',
-        consequenceText: 'The browser connects over unencrypted HTTP to a crude replica of the campus SSO portal. A fake alert prompt demands Jordan enter username, password, and Duo 2FA code. Exposing the browser to this server leaks Jordan\'s IP, browser fingerprint, and session cookies.',
-        screenEffect: 'caution',
+        immediateReaction: 'ALERT: Suspicious child process spawned (powershell.exe -enc ...). Memory defense tripwire triggered.',
+        consequenceText: 'The screen flickers as an unauthorized background process attempts to dump local credentials. The lab network quarantine immediately disconnects the machine, and SecOps seizes the workstation.',
+        screenEffect: 'threat-alert',
       },
       {
-        id: 'decision-reply-ask',
-        label: 'Reply to the email asking: "Is this actually from IT Support?"',
+        id: 'decision-forward-classmate',
+        label: 'Forward the email to classmates to ask if they received the same notice',
         type: 'passive',
-        description: 'Send a quick message back to IT-Support@un1versity-help.com asking for confirmation.',
-        trustChange: -4,
+        description: 'Forward the phishing email and attachment to Jordan\'s biology class mailing list.',
+        trustChange: -10,
         isOptimal: false,
-        immediateReaction: 'Active response acknowledged by attacker server.',
-        consequenceText: 'The attacker immediately receives confirmation that Jordan\'s email is monitored by an active human target. Within 12 minutes, targeted follow-up phone calls and spoofed SMS texts begin flooding Jordan\'s phone with even more aggressive pretexting.',
+        immediateReaction: 'Malicious payload re-distributed across campus student email distribution list.',
+        consequenceText: 'By forwarding the unverified email, Jordan inadvertently helps the attacker propagate the threat. Three other students click the link before mail filters can purge the message.',
         screenEffect: 'caution',
       },
     ],
@@ -270,50 +284,93 @@ Un1versity Support Operations Directorate`,
       location: 'Engineering Building Room 204',
       status: 'Curious & Uncertain',
     },
+    doctrineBrief: {
+      title: 'DOCTRINE // HARDWARE & REMOVABLE MEDIA THREATS',
+      durationHint: '45 sec',
+      facts: [
+        'Modern BadUSB microcontrollers emulate standard USB HID keyboards, injecting arbitrary commands at up to 1,000 keystrokes per second.',
+        'Plugging an untrusted USB into any device—even a supposed "test machine"—instantly triggers hardware bus enumeration and driver execution before OS-level antivirus scans run.',
+        'Physical baiting exploits human curiosity or academic stress; dropped drives in computer labs have an estimated 48% plug-in rate without active training.',
+      ],
+      attackerModel:
+        'Attackers rely on physical proximity and natural curiosity to bypass air-gapped or perimeter network firewalls. By packaging an ATmega or RP2040 microcontroller into a standard flash drive housing labeled with high-value lures ("Exam Keys", "Payroll"), adversaries ensure an unsuspecting insider plugs the weapon directly into internal workstations.',
+      whatGoodLooksLike:
+        'Zero execution on untrusted physical media. The moment an abandoned or unknown storage device is discovered, it is treated as a potential hardware payload. It must never be inserted into personal laptops or lab workstations—even to format it. Custody is maintained in an electrostatic containment bag and delivered directly to campus SecOps.',
+      relatedAbility: 'ISOLATE',
+    },
     briefing: {
       situation: 'Marcus noticed a sleek metallic USB drive sitting on top of an open keyboard in the campus CAD computer lab.',
-      npcDialogue: '"Someone left this black flash drive labeled \'CS301_Final_Exams_Grading_Key\'. Several students walked by and stared at it. I was thinking of plugging it into my laptop to check who owns the drive so I can email them."',
+      npcDialogue: '"Someone left this black flash drive labeled \'EXAM_SOLUTIONS_2026\'. Several students walked by and stared at it. I was thinking of plugging it into my laptop to check who owns the drive so I can email them."',
       objective: 'Examine the physical drive and its hardware footprint before deciding whether to plug it into any networked machine.',
     },
     investigationWorkspace: {
       type: 'hardware-analyzer',
-      title: 'Isolated Hardware Diagnostic Cradle [Air-Gapped Rig]',
+      title: 'Air-Gapped Hardware Diagnostic Cradle [Bus Pirate Protocol Analyzer]',
       interfaceMetadata: {
-        clientName: 'Hardware USB Interceptor (Bus Pirate Interface)',
+        clientName: 'Hardware USB Interceptor (Air-Gapped Diagnostic Rig)',
         timestamp: 'Today at 16:05:11 UTC',
-        senderDisplay: 'Physical Artifact: Model RubberDucky / Custom Microcontroller',
+        senderDisplay: 'Physical Artifact: Model RubberDucky / ATmega32U4 Controller',
         subject: 'USB Device Descriptor & VID/PID Inspection',
-        bodyText: `PHYSICAL LABELS:
-- Front: Hand-written silver marker: "CS301 Fall Final Exams - Prof. Miller"
-- Rear: Small reset button recessed into the plastic case
+        bodyText: `PHYSICAL LABELS & CASING:
+- Front: Hand-written label "EXAM_SOLUTIONS_2026"
+- Rear: Recessed pinhole hardware reset switch
+- Volume Label: EXAM_SOLUTIONS_2026
 
 HARDWARE EMULATION INTERFACE:
-- Microcontroller: ATmega32U4 / RP2040 chip
+- Microcontroller: ATmega32U4 composite controller
 - Enumerated Device Class: 0x03 (Human Interface Device - HID Keyboard)
-- Storage Controller: Simulated / Secondary MicroSD slot
-- Hardware Vendor ID (VID): 0x16C0 (Non-standard / Prototyping)
-- Product ID (PID): 0x05DF`,
+- Storage Controller: Simulated secondary MicroSD bridge (0x08)
+- Hardware Vendor ID (VID): 0x16C0 (Prototyping / Hak5 Hardware)
+- Product ID (PID): 0x05DF (RubberDucky Emulation Mode)
+
+FILESYSTEM & PAYLOAD DISASSEMBLY:
+- autorun.inf (Hidden system file)
+- grades.pdf.lnk (LNK shortcut pointing to powershell execution)
+- update.ps1 (Staged cradle)`,
         attachmentName: 'inject.bin',
         attachmentSize: '48 KB',
-        attachmentType: 'DuckyScript Micro-Payload',
+        attachmentType: 'DuckyScript Keystroke Payload',
         linkDisplay: 'Hardware Bus: Port 0x02',
       },
       targets: [
         {
-          id: 'target-hid-descriptor',
-          label: 'USB Device Descriptor (HID vs Storage)',
-          requiredAbility: 'INSPECT',
-          previewValue: 'Device Class: 0x03 (Human Interface Device Keyboard)',
+          id: 'target-baiting-psychology',
+          label: 'Physical Exterior & Label Psychology (Baiting)',
+          requiredAbility: 'OBSERVE',
+          previewValue: 'Hand-written marker: "EXAM_SOLUTIONS_2026"',
           revealedDetail: {
-            heading: 'Hardware Device Spoofing',
-            summary: 'Despite looking like a simple flash drive, the device identifies to the operating system as a USB keyboard. When plugged in, it can type 1,000 keystrokes per second to open a terminal and execute malware.',
+            heading: 'Physical Social Engineering (Baiting Vector)',
+            summary: 'Attackers deliberately place enticing labels like "EXAM_SOLUTIONS_2026", "Payroll", or "Bonus" on dropped media in university labs knowing human curiosity or academic stress will provoke hasty connection.',
             technicalData: {
-              'Actual Device Class': 'HID Keyboard (bInterfaceClass 0x03)',
-              'Expected Class': 'Mass Storage Device (0x08)',
-              'Attack Type': 'BadUSB / Keystroke Injection Weapon',
-              'Execution Speed': 'Instantly fires commands upon port power',
+              'Lure Type': 'High-value academic temptation',
+              'Placement Strategy': 'Shared printer counter, Room 204',
+              'Physical Form': 'Standard USB Type-A enclosure with recessed flash reset pin',
             },
-            threatIndicator: 'CRITICAL HARDWARE THREAT: Device will hijack keyboard control upon connection.',
+            threatIndicator: 'SOCIAL ENGINEERING: Manufactured curiosity lure.',
+            evidenceYielded: {
+              id: 'ev-bait-label',
+              title: 'Physical USB Baiting Artifact',
+              category: 'Physical Security',
+              description: 'Physical flash drive labeled with high-value exam key bait to induce connection.',
+              technicalDetail: 'Physical baiting vector: "EXAM_SOLUTIONS_2026" written in silver permanent marker.',
+            },
+          },
+        },
+        {
+          id: 'target-usb-descriptor',
+          label: 'USB Device Descriptor (HID Keyboard vs Mass Storage)',
+          requiredAbility: 'INSPECT',
+          previewValue: 'VID: 0x16C0, PID: 0x05DF, Device Class: 0x03 (HID)',
+          revealedDetail: {
+            heading: 'Hardware Class Spoofing (BadUSB)',
+            summary: 'Despite appearing as a standard flash drive, the device negotiates with the host bus as an HID Keyboard (0x03). As soon as power is applied, the microcontroller types arbitrary commands at 1,000 keystrokes per second before antivirus can intervene.',
+            technicalData: {
+              'Vendor ID (VID)': '0x16C0 (Non-standard prototyping)',
+              'Product ID (PID)': '0x05DF (Keystroke Injection Hardware)',
+              'Host Negotiation': 'bInterfaceClass 0x03 (Human Interface Device)',
+              'Operating Mode': 'Composite HID Keyboard + Mass Storage Bridge',
+            },
+            threatIndicator: 'CRITICAL HARDWARE THREAT: Device acts as ghost keyboard.',
             evidenceYielded: {
               id: 'ev-06-badusb-hid',
               title: 'BadUSB Hardware Emulator',
@@ -324,18 +381,18 @@ HARDWARE EMULATION INTERFACE:
           },
         },
         {
-          id: 'target-payload-script',
-          label: 'Microcontroller Keystroke Script',
+          id: 'target-duckyscript-payload',
+          label: 'DuckyScript Micro-Payload & PowerShell Cradle',
           requiredAbility: 'ANALYZE',
-          previewValue: 'inject.bin (Embedded payload)',
+          previewValue: 'DELAY 400 / GUI r / STRING powershell -enc ...',
           revealedDetail: {
-            heading: 'DuckyScript Payload Analysis',
-            summary: 'The script executes: GUI r -> cmd.exe -> downloads payload from remote staging server and establishes persistent backdoor.',
+            heading: 'Automated Keystroke Script Analysis',
+            summary: 'The microcontroller executes: DELAY 400 -> GUI r (opens Windows Run prompt) -> types encoded PowerShell command to download and execute an in-memory reverse shell from a remote command server.',
             technicalData: {
-              'Command 1': 'DELAY 500',
-              'Command 2': 'GUI r (Opens Run dialog)',
-              'Command 3': 'STRING powershell -w hidden -c "IEX(New-Object Net.WebClient).DownloadString(...)"',
-              'Risk': 'Complete system compromise in under 3 seconds',
+              'Script Step 1': 'DELAY 400 (Wait for driver enumeration)',
+              'Script Step 2': 'GUI r (Spawns Run dialog)',
+              'Script Step 3': 'STRING powershell -w hidden -enc JABzAD0ATgBlAHcALQBPAGIAagBlAGMAdAA...',
+              'Target Action': 'In-memory credential dumping and C2 beacon',
             },
             threatIndicator: 'ACTIVE MALWARE: Automated reverse-shell script.',
             evidenceYielded: {
@@ -348,55 +405,67 @@ HARDWARE EMULATION INTERFACE:
           },
         },
         {
-          id: 'target-baiting-psychology',
-          label: 'Label Psychology (Baiting Attack)',
-          requiredAbility: 'OBSERVE',
-          previewValue: '"CS301 Fall Final Exams - Prof. Miller"',
+          id: 'target-chain-custody',
+          label: 'Chain of Custody & Proctor Interview',
+          requiredAbility: 'QUESTION',
+          previewValue: 'Marcus Chen statement: Discovered at 15:45 in Room 204',
           revealedDetail: {
-            heading: 'Physical Social Engineering (Baiting)',
-            summary: 'Attackers deliberately leave tempting or authoritative labels like "Exams", "Payroll", or "Executive Compensation" in public areas knowing human curiosity will prompt someone to plug it in.',
+            heading: 'Custody & Physical Footprint Audit',
+            summary: 'Marcus confirms an unknown individual wearing a grey hoodie entered Room 204 during the 15:30 lab changeover, lingered near the printer for 90 seconds without logging into any terminal, and departed without speaking.',
             technicalData: {
-              'Bait Vector': 'High-interest academic material',
-              'Placement Strategy': 'High-traffic lab desk beside shared printer',
+              'Discovery Time': '15:45 UTC',
+              'Physical Location': 'CAD Lab Workstation 12',
+              'Suspicious Activity': 'Subject did not authenticate; targeted physical drop',
             },
-            threatIndicator: 'SOCIAL TRAP: Designed to exploit academic curiosity.',
+            threatIndicator: 'CORROBORATED: Coordinated physical drop confirmed.',
           },
         },
       ],
     },
     decisions: [
       {
-        id: 'decision-quarantine-usb',
-        label: 'Confiscate the drive, keep it unpowered, and deliver to Campus SecOps for destruction',
-        type: 'defensive',
-        description: 'Instruct Marcus never to plug stray drives into campus workstations and turn the artifact over to the security team.',
-        trustChange: 14,
-        isOptimal: true,
-        immediateReaction: 'SecOps logs the hardware serial and issues an advisory regarding targeted USB drops on campus.',
-        consequenceText: 'Marcus realizes the danger: "That could have taken down our entire lab network and stolen everyone\'s lab accounts. I\'m glad we checked the hardware specs first!"',
-        screenEffect: 'clean',
-      },
-      {
-        id: 'decision-plug-laptop',
-        label: 'Plug the drive into Marcus\'s laptop to see if there is an owner text file',
+        id: 'decision-plug-personal-laptop',
+        label: 'Plug the drive into Marcus\'s personal laptop to inspect the owner files',
         type: 'reckless',
-        description: 'Insert the drive into a USB 3.0 port on the proctor workstation.',
-        trustChange: -12,
+        description: 'Insert the drive into a USB port on Marcus\'s personal computer.',
+        trustChange: -20,
         isOptimal: false,
-        immediateReaction: 'KEYSTROKE INJECTION IN PROGRESS: Ghost typing detected. Command prompt spawned.',
-        consequenceText: 'Within 800 milliseconds of plugging the drive in, terminal windows flash across the monitor. The workstation begins exfiltrating saved browser passwords to a remote command server. The lab proctor account is compromised.',
+        immediateReaction: 'KEYSTROKE INJECTION TRIGGERED: Ghost typing opens terminal and downloads reverse shell.',
+        consequenceText: 'Within 500 milliseconds of connection, the keyboard controller injects an encoded PowerShell payload. The personal laptop is backdoored, local browser passwords are dumped, and the compromised endpoint joins an attacker botnet.',
         screenEffect: 'threat-alert',
       },
       {
-        id: 'decision-format-drive',
-        label: 'Plug it in and quickly format it to wipe any files',
+        id: 'decision-plug-test-vm',
+        label: 'Plug into a "test VM" running on the public lab kiosk machine',
         type: 'reckless',
-        description: 'Attempt to insert the drive and quickly right-click "Format".',
+        description: 'Insert the drive into the lab kiosk thinking the VM hypervisor will isolate hardware keystrokes.',
+        trustChange: -15,
+        isOptimal: false,
+        immediateReaction: 'USB HID PASSTHROUGH FAILURE: Keystrokes fired directly into the host OS.',
+        consequenceText: 'The emulated keyboard fires into the host kiosk operating system before the virtual machine even captures the USB bus. The campus engineering lab host is compromised and disconnected by SecOps.',
+        screenEffect: 'threat-alert',
+      },
+      {
+        id: 'decision-format-explorer',
+        label: 'Insert the drive and quickly format it in Windows Explorer to sanitize it',
+        type: 'reckless',
+        description: 'Attempt to insert the drive and quickly right-click "Format" to wipe storage.',
         trustChange: -8,
         isOptimal: false,
-        immediateReaction: 'Keystroke payload executes before the operating system can even mount the storage partition.',
-        consequenceText: 'Formatting only affects storage partitions; it cannot prevent an emulated keyboard from firing keystrokes during initialization. The exploit completes before the format dialog even opens.',
-        screenEffect: 'threat-alert',
+        immediateReaction: 'Formatting only affects storage partitions; keyboard commands execute instantly on insertion.',
+        consequenceText: 'Windows Explorer formatting dialog opens too late. The keystroke injection fires within 400 milliseconds of insertion, executing code before the user can even click Format.',
+        screenEffect: 'caution',
+      },
+      {
+        id: 'decision-quarantine-usb',
+        label: 'Do not enumerate: bag in electrostatic container and report to Campus IT / SecOps',
+        type: 'defensive',
+        description: 'Place the drive in an anti-static evidence sleeve, maintain strict custody, and deliver it directly to the SecOps incident response lab.',
+        trustChange: 15,
+        isOptimal: true,
+        immediateReaction: 'SecOps Secures the BadUSB artifact and issues a campus-wide advisory on physical baiting.',
+        consequenceText: 'Marcus places the drive in an evidence bag. SecOps reverse-engineers the microcontroller, locates the attacker C2 server, and prevents dozens of lab workstations from falling victim.',
+        screenEffect: 'clean',
       },
     ],
     learningTakeaways: [
@@ -410,6 +479,11 @@ HARDWARE EMULATION INTERFACE:
       description: 'Quarantine compromised nodes, disconnect network interfaces, and prevent lateral movement.',
       tier: 'advanced',
       command: 'isolate --network-kill',
+    },
+    completionCertificate: {
+      id: 'CERT-HW-02',
+      title: 'Hardware Threat Containment',
+      field: 'Physical Media Forensics',
     },
   },
 
@@ -429,30 +503,52 @@ HARDWARE EMULATION INTERFACE:
       location: 'Student Union Cafe',
       status: 'Working on Grant Proposal',
     },
+    doctrineBrief: {
+      title: 'DOCTRINE // ROGUE ACCESS POINTS & EVIL TWINS',
+      durationHint: '45 sec',
+      facts: [
+        'Evil Twin access points spoof authorized network SSIDs to fool mobile devices and laptops into automatic association.',
+        'An unencrypted open Wi-Fi network broadcasts all plaintext data into public radio space; any attacker in line-of-sight can capture transmitted packets.',
+        'Rogue gateways position attackers as the default router, enabling DNS hijacking, captive portal credential theft, and SSL stripping attacks.',
+      ],
+      attackerModel:
+        'Adversaries deploy compact wireless transceivers (such as WiFi Pineapples or Alfa high-gain antennas) in high-traffic public venues like student cafes. By transmitting beacon frames with names like "Campus-Secure_Free" at higher signal amplification (-32 dBm) than official ceiling fixtures, they induce devices to connect and route all campus portal credentials through a local Man-in-the-Middle proxy.',
+      whatGoodLooksLike:
+        'Enforce strict 802.1X enterprise authentication with verified certificate pinning. Never connect to open, unauthenticated public Wi-Fi networks when accessing institutional accounts. When an evil twin is spotted, report the physical beacon parameters (BSSID, channel, and anomalous signal strength) directly to campus network operations.',
+      relatedAbility: 'TRACE',
+    },
     briefing: {
       situation: 'Elena is sitting at the crowded Student Union Cafe attempting to submit an encrypted research paper.',
-      npcDialogue: '"The cafe Wi-Fi was really slow, but I just spotted a new network called \'Campus_HighSpeed_Guest_NoPassword\'. It doesn\'t ask for any login, and the signal is at full strength. Should I connect to get my grant submitted?"',
+      npcDialogue: '"The cafe Wi-Fi was really slow, but I just spotted a new network called \'Campus-Secure_Free\'. It doesn\'t ask for any login, and the signal is at full strength. Should I connect to get my grant submitted?"',
       objective: 'Inspect the Wi-Fi beacon frames, encryption protocols, and BSSID MAC addresses before connecting.',
     },
     investigationWorkspace: {
       type: 'network-scanner',
-      title: 'Spectrum & Packet Sniffer [802.11 Monitor Mode]',
+      title: 'Spectrum & Packet Sniffer [802.11 Monitor Mode & Beacon Table]',
       interfaceMetadata: {
-        clientName: 'AetherScan RF Inspector',
+        clientName: 'AetherScan RF Inspector (802.11 Monitor)',
         timestamp: 'Today at 17:18:02 UTC',
-        senderDisplay: 'SSID: Campus_HighSpeed_Guest_NoPassword',
-        subject: '802.11 Beacon Frame Telemetry',
+        senderDisplay: 'SSID: Campus-Secure_Free',
+        subject: '802.11 Beacon Frame Telemetry & Channel Spectrum',
         bodyText: `DETECTED NEARBY WIRELESS ACCESS POINTS:
-1. SSID: "Campus-Secure-802.1X"
-   - Encryption: WPA3-Enterprise (EAP-TLS)
+1. SSID: "Campus-Secure"
+   - Encryption: WPA2-Enterprise (802.1X EAP-TLS)
    - BSSID: 70:3A:0E:11:42:01 (Cisco Catalyst Campus AP)
-   - Signal: -68 dBm
+   - Channel: 6 (2.4 GHz) | RSSI: -68 dBm (Ceiling mount)
+   - RSNE: Valid IEEE 802.11i Information Element
 
-2. SSID: "Campus_HighSpeed_Guest_NoPassword"
-   - Encryption: OPEN (None / Plaintext)
+2. SSID: "Campus-Secure_Free"
+   - Encryption: OPEN (No WPA2/WPA3 / Plaintext airwaves)
    - BSSID: 00:C0:CA:9A:88:14 (Alfa Network Pineapple / Portable USB NIC)
-   - Signal: -32 dBm (Extremely close proximity, laptop beside counter)
-   - Captive Portal Gateway: 10.0.0.1 running dnsmasq and mitmproxy`,
+   - Channel: 6 (Intentional channel overlap) | RSSI: -32 dBm (Table adjacent)
+   - RSNE: MISSING (Zero encryption flags)
+   - Captive Portal Gateway: http://10.0.0.1/login (mitmproxy SSL stripping active)
+
+3. SSID: "Campus-Guest"
+   - Encryption: WPA2-PSK | BSSID: 70:3A:0E:11:42:02 | RSSI: -70 dBm
+
+4. SSID: "xfinitywifi"
+   - Encryption: Open | BSSID: 00:1D:D5:3C:99:10 | RSSI: -84 dBm`,
         attachmentName: 'pcap_capture_beacon.pcap',
         attachmentSize: '1.1 MB',
         attachmentType: 'Network Packet Trace',
@@ -461,18 +557,18 @@ HARDWARE EMULATION INTERFACE:
       targets: [
         {
           id: 'target-encryption-type',
-          label: 'Encryption Standard & Authentication',
+          label: 'Encryption Standard & Missing RSNE Element',
           requiredAbility: 'INSPECT',
-          previewValue: 'Security: OPEN (No encryption, unauthenticated)',
+          previewValue: 'Security: OPEN (Missing 802.11i RSNE)',
           revealedDetail: {
-            heading: 'Open Unencrypted Airwaves',
-            summary: 'All packets transmitted over an open network can be sniffed out of the air by anyone in radio range. No mutual authentication exists between client and access point.',
+            heading: 'Unauthenticated Open Airwaves',
+            summary: 'The access point advertises itself as a secure campus extension but transmits zero encryption parameters. All data frames, cookies, and tokens are transmitted in cleartext into the physical room.',
             technicalData: {
               'Security Type': 'None (Open / Plaintext 802.11)',
-              'Eavesdropping Risk': '100% of unencrypted local traffic visible',
-              'Man-in-the-Middle Risk': 'Attacker routes all gateway traffic through proxy',
+              'RSNE Status': 'Information Element missing from beacon frame',
+              'Eavesdropping Vulnerability': '100% passive packet interception',
             },
-            threatIndicator: 'HIGH RISK: Unencrypted broadcast transmission.',
+            threatIndicator: 'HIGH RISK: Zero cryptographic protection.',
             evidenceYielded: {
               id: 'ev-08-open-wifi',
               title: 'Unauthenticated Open Wi-Fi Rogue Node',
@@ -484,18 +580,18 @@ HARDWARE EMULATION INTERFACE:
         },
         {
           id: 'target-bssid-hardware',
-          label: 'BSSID Hardware Fingerprint',
+          label: 'BSSID MAC Address & Hardware Vendor OUI',
           requiredAbility: 'VERIFY',
-          previewValue: 'BSSID: 00:C0:CA:9A:88:14 (Alfa Network Vendor OUI)',
+          previewValue: 'BSSID: 00:C0:CA:9A:88:14 (Alfa Network Attack Card)',
           revealedDetail: {
-            heading: 'Hardware Identity Mismatch',
-            summary: 'Official campus access points use Cisco/Aruba enterprise hardware. The MAC address prefix 00:C0:CA belongs to portable penetration testing hardware frequently used for rogue AP (Evil Twin) attacks.',
+            heading: 'Hardware Infrastructure Spoofing',
+            summary: 'Official campus access points are Cisco Catalyst enterprise hardware (OUI 70:3A:0E). The prefix 00:C0:CA belongs to Alfa Network Inc., widely manufactured for portable penetration testing and Rogue AP Pineapple hardware.',
             technicalData: {
-              'Vendor OUI': 'Alfa Network Inc. (High-power portable Wi-Fi card)',
-              'Official Campus OUI': 'Cisco Systems / Aruba Networks',
-              'Proximity': 'Transmitter is approximately 1.5 meters away (backpack under window)',
+              'Transmitter OUI': '00:C0:CA (Alfa Network Inc.)',
+              'Official Infrastructure OUI': '70:3A:0E (Cisco Systems)',
+              'Device Type': 'High-power portable Wi-Fi transceiver',
             },
-            threatIndicator: 'CRITICAL INDICATOR: Commercial rogue AP hardware in use.',
+            threatIndicator: 'CRITICAL THREAT: Portable attacker hardware mimicking campus AP.',
             evidenceYielded: {
               id: 'ev-09-rogue-ap-hardware',
               title: 'Evil Twin Rogue Access Point',
@@ -505,30 +601,84 @@ HARDWARE EMULATION INTERFACE:
             },
           },
         },
+        {
+          id: 'target-signal-overlap',
+          label: 'Signal Strength RSSI & Physical Proximity',
+          requiredAbility: 'OBSERVE',
+          previewValue: 'RSSI: -32 dBm (Unusually strong vs -68 dBm ceiling)',
+          revealedDetail: {
+            heading: 'Proximity Differential Analysis',
+            summary: 'Official campus ceiling fixtures yield an RSSI of -68 dBm inside the cafe. An RSSI of -32 dBm proves the transmitter is located within 2 to 3 meters of Elena\'s table (e.g. concealed in a backpack nearby).',
+            technicalData: {
+              'Observed RSSI': '-32 dBm (Near-field transmission)',
+              'Infrastructure Baseline': '-68 dBm (Campus ceiling AP)',
+              'Estimated Distance': 'Under 2.5 meters from target',
+            },
+            threatIndicator: 'PROXIMITY ALERT: Transmitter located inside the cafe seating area.',
+          },
+        },
+        {
+          id: 'target-captive-gateway',
+          label: 'Captive Gateway URL & MitM Proxy Trace',
+          requiredAbility: 'ANALYZE',
+          previewValue: 'http://10.0.0.1/login (mitmproxy SSL stripping)',
+          revealedDetail: {
+            heading: 'Man-in-the-Middle SSL Stripping Gateway',
+            summary: 'The rogue DHCP server assigns clients 10.0.0.x addresses and forces DNS queries through 10.0.0.1. The captive portal executes an SSL stripping proxy to downgrade HTTPS sessions and harvest plaintext credentials.',
+            technicalData: {
+              'Gateway IP': '10.0.0.1 (dnsmasq rogue resolver)',
+              'Interception Daemon': 'mitmproxy / sslstrip',
+              'Certificate Status': 'Self-signed invalid root CA',
+            },
+            threatIndicator: 'CRITICAL THREAT: Active Man-in-the-Middle interception.',
+          },
+        },
       ],
     },
     decisions: [
       {
-        id: 'decision-warn-elena',
-        label: 'Instruct Elena to avoid the rogue network and connect only to the official 802.1X network with VPN',
-        type: 'defensive',
-        description: 'Stick to Campus-Secure-802.1X with campus VPN enabled and report the rogue SSID to network operations.',
-        trustChange: 12,
-        isOptimal: true,
-        immediateReaction: 'Network security locates the rogue transmitter and disconnects the malicious station.',
-        consequenceText: 'Elena submits her grant safely through encrypted tunnels. "I had no idea someone in the cafe could set up a fake Wi-Fi network named after the university. You saved my research data!"',
-        screenEffect: 'clean',
+        id: 'decision-join-open-wifi',
+        label: 'Join Campus-Secure_Free and log into the student research portal',
+        type: 'reckless',
+        description: 'Associate with Campus-Secure_Free and enter credentials into the captive portal prompt.',
+        trustChange: -18,
+        isOptimal: false,
+        immediateReaction: 'SESSION HIJACKED: Rogue gateway intercepts credentials and captures auth cookies.',
+        consequenceText: 'The captive portal intercepts Elena\'s login credentials and session tokens. The attacker gains full access to her grant proposal and internal university research storage.',
+        screenEffect: 'threat-alert',
       },
       {
-        id: 'decision-connect-quick',
-        label: 'Connect to the open Wi-Fi quickly just to upload the grant file',
+        id: 'decision-tell-nearby-faster',
+        label: 'Tell nearby students in the cafe: "This new free Wi-Fi is way faster"',
         type: 'reckless',
-        description: 'Associate with Campus_HighSpeed_Guest_NoPassword and start browsing.',
+        description: 'Advise other patrons in the cafe to connect to Campus-Secure_Free.',
         trustChange: -10,
         isOptimal: false,
-        immediateReaction: 'DNS queries intercepted. SSL Stripping downgrade in progress.',
-        consequenceText: 'The rogue gateway intercepts all DNS lookups and injects spoofed responses. Elena\'s session tokens for the grant submission portal are captured by the operator\'s mitmproxy script.',
-        screenEffect: 'threat-alert',
+        immediateReaction: 'THREAT AMPLIFIED: Five other cafe patrons connect to the rogue access point.',
+        consequenceText: 'By spreading the rogue network to other students, multiple student devices connect to the rogue gateway, creating a major credential harvesting incident across the Student Union.',
+        screenEffect: 'caution',
+      },
+      {
+        id: 'decision-use-for-maps',
+        label: 'Use the open Wi-Fi "just for transit maps" assuming background VPN protects it',
+        type: 'passive',
+        description: 'Connect to the network believing consumer VPN will prevent any interception.',
+        trustChange: -8,
+        isOptimal: false,
+        immediateReaction: 'VPN LEAK DETECTED: DNS queries bypass tunnel before VPN handshake establishes.',
+        consequenceText: 'The rogue gateway intercepts plaintext DNS requests before the VPN tunnel initializes, leaking Elena\'s device identity, active apps, and local IP routing information.',
+        screenEffect: 'caution',
+      },
+      {
+        id: 'decision-stay-cellular-report',
+        label: 'Stay on cellular / known WPA2-Enterprise; report rogue BSSID to Campus IT',
+        type: 'defensive',
+        description: 'Instruct Elena to stay on official cellular data or 802.1X and immediately report the Alfa Network BSSID and -32 dBm signal to SecOps.',
+        trustChange: 15,
+        isOptimal: true,
+        immediateReaction: 'SecOps dispatches a technician who locates the rogue Pineapple device in the cafe.',
+        consequenceText: 'Elena submits her grant safely over validated channels. Campus security confiscates the rogue hardware and prevents a massive credential theft wave across the Student Union.',
+        screenEffect: 'clean',
       },
     ],
     learningTakeaways: [
@@ -542,6 +692,11 @@ HARDWARE EMULATION INTERFACE:
       description: 'Follow network routes, map hops, inspect routing tables, and identify spoofed gateways.',
       tier: 'advanced',
       command: 'trace --hops',
+    },
+    completionCertificate: {
+      id: 'CERT-WIFI-03',
+      title: 'Wireless Threat Identification',
+      field: 'Wireless Network Security',
     },
   },
 
@@ -561,48 +716,69 @@ HARDWARE EMULATION INTERFACE:
       location: 'Metro Central Ticketing Station',
       status: 'Rushing for train',
     },
+    doctrineBrief: {
+      title: 'DOCTRINE // QR CODE TAMPERING & PHYSICAL OVERLAYS',
+      durationHint: '45 sec',
+      facts: [
+        'QR codes are optical data formats without human readability; a user cannot distinguish an official URL from a malicious link without dedicated pre-scan parsing.',
+        'Physical QR overlay attacks (quishing / sticker swapping) involve sticking adhesive labels over legitimate payment terminals in parking and transit hubs.',
+        'Malicious QR destinations frequently leverage URL shorteners and mobile deep links (intent://) to initiate fraudulent payment requests or force unauthorized permission grants.',
+      ],
+      attackerModel:
+        'Adversaries exploit physical infrastructure trust and human impatience. By applying cheap printed vinyl stickers over parking meters, electric scooter QR codes, or train ticketing kiosks, attackers redirect hurried commuters to cloned payment portals that simulate 50% discounts while draining digital wallets or harvesting debit cards.',
+      whatGoodLooksLike:
+        'Always verify the physical integrity of public QR codes before aiming a mobile camera. Look for tactile sticker seams, peeling edges, or misaligned typography. When in doubt, navigate directly to official municipal portals or pay via validated hardware terminals and report the physical tampering to transit authorities immediately.',
+      relatedAbility: 'REPORT',
+    },
     briefing: {
       situation: 'At the central metro automated ticketing kiosk, Tariq is about to scan a glossy sticker placed over the payment screen.',
       npcDialogue: '"The card reader is out of order, but there is a sticker saying \'Quick Mobile Pay - 50% Metro Discount\'. If I scan it with my banking app, I can catch the 5:15 express train!"',
       objective: 'Inspect the physical sticker, decoded URL payload, and domain registration before Tariq scans it.',
     },
     investigationWorkspace: {
-      type: 'hardware-analyzer',
-      title: 'Optical Scanner & URL De-Obfuscator',
+      type: 'qr-inspector',
+      title: 'Optical QR Matrix & URL De-Obfuscation Inspector',
       interfaceMetadata: {
-        clientName: 'QR Security Decoupler',
+        clientName: 'QR Forensic Decoupler & Optical Analyzer',
         timestamp: 'Today at 17:11:00 UTC',
-        senderDisplay: 'Physical Overlay Sticker',
-        subject: 'Decoded QR Matrix Telemetry',
-        bodyText: `PHYSICAL INSPECTION:
-- Surface: A vinyl adhesive sticker pasted directly over the official laser-etched metal payment plate
-- Edges: Corner peeling reveals the original transit agency logo underneath
+        senderDisplay: 'Physical Overlay Sticker on Metro Kiosk #4',
+        subject: 'Decoded QR Matrix Telemetry & Deep-Link Intent Chain',
+        bodyText: `PHYSICAL KIOSK INSPECTION:
+- Surface: Glossy vinyl adhesive sticker physically pasted over laser-etched metal kiosk plate
+- Edge Alignment: 2.5mm offset from original bezel; corner peeling reveals official transit logo underneath
+- Printing Technique: Low-resolution inkjet matrix print vs industrial laser etch
 
-DECODED BARCODE PAYLOAD:
-- Raw URI: https://bit.ly/metro-fast-pay-discount-2026
-- Expanded Redirection Chain:
-  Step 1: https://bit.ly/metro-fast-pay-discount-2026
-  Step 2: https://metro-city-tickets-discount.xyz/pay/invoice.php?device=mobile
-  Step 3: Webview triggers intent: bankpay://transfer?recipient=crypto-escrow-wallet&amount=250`,
+DECODED OPTICAL PAYLOAD:
+- Raw QR Data: https://pay-transit-secure.xyz/c?transit_id=8812&discount=50
+- Official Domain Authority: transit.metrocity.gov (DNS registered 2011, DNSSEC signed)
+- Destination Domain: pay-transit-secure.xyz (Registered 36 hours ago via anonymous registrar)
+
+EXPANDED REDIRECTION & INTENT CHAIN:
+- Step 1: HTTP GET https://pay-transit-secure.xyz/c?transit_id=8812
+- Step 2: 302 Redirect -> https://pay-transit-secure.xyz/checkout/mobile_intent
+- Step 3: Trigger Android / iOS Deep Link:
+  intent://pay?recipient=crypto-escrow-wallet&amount=250#Intent;package=com.fake.quickpay;end
+- Target Action: Pre-authorizes immediate $250 mobile wallet withdrawal`,
         attachmentName: 'qr_matrix_decoded.png',
         attachmentSize: '64 KB',
         attachmentType: 'Barcode Payload Analysis',
-        linkDisplay: 'https://metro-city-tickets-discount.xyz',
+        linkDisplay: 'https://pay-transit-secure.xyz',
       },
       targets: [
         {
           id: 'target-physical-overlay',
-          label: 'Physical Sticker Layer & Edge Inspection',
+          label: 'Physical Sticker Layer & Edge Offset',
           requiredAbility: 'OBSERVE',
-          previewValue: 'Physical vinyl sticker placed over official kiosk surface',
+          previewValue: 'Physical vinyl sticker pasted over laser-etched metal',
           revealedDetail: {
             heading: 'Physical Tampering (QR Overlay Attack)',
-            summary: 'Criminals print sticker overlays and paste them over legitimate public QR codes (parking meters, bike rentals, transit kiosks).',
+            summary: 'A vinyl adhesive sticker was pasted over the legitimate transit payment terminal. The peeling corner reveals the authentic laser-engraved municipal payment instructions obscured underneath.',
             technicalData: {
-              'Physical State': 'Adhesive overlay, non-manufacturer material',
-              'Original Plate': 'Metal laser engraving obscured underneath',
+              'Physical Layer': 'Peelable adhesive vinyl sticker',
+              'Original Plate': 'Laser-etched metal plate underneath',
+              'Alignment Offset': '2.5mm off-axis misalignment',
             },
-            threatIndicator: 'PHYSICAL TAMPERING CONFIRMED: Unauthorized sticker placement.',
+            threatIndicator: 'PHYSICAL TAMPERING CONFIRMED: Unauthorized adhesive overlay.',
             evidenceYielded: {
               id: 'ev-10-qr-overlay',
               title: 'Physical QR Code Sticker Overlay',
@@ -613,17 +789,42 @@ DECODED BARCODE PAYLOAD:
           },
         },
         {
-          id: 'target-redirect-chain',
-          label: 'URL Shortener & Deep Link Analysis',
-          requiredAbility: 'ANALYZE',
-          previewValue: 'Shortened URL -> bank transfer deep link intent',
+          id: 'target-decoded-url',
+          label: 'Decoded QR Destination Domain vs Official Authority',
+          requiredAbility: 'INSPECT',
+          previewValue: 'pay-transit-secure.xyz vs transit.metrocity.gov',
           revealedDetail: {
-            heading: 'Malicious Payment Deep Link',
-            summary: 'The QR code uses a shortened URL to conceal an automated mobile banking intent that requests an immediate unauthorized fund transfer.',
+            heading: 'Domain Spoofing & TLD Deception',
+            summary: 'The decoded destination is pay-transit-secure.xyz, registered 36 hours ago in an anonymous offshore jurisdiction. The official municipal transit authority operates exclusively under transit.metrocity.gov.',
             technicalData: {
-              'Shortener': 'bit.ly (Obfuscation layer)',
-              'Host Domain': 'metro-city-tickets-discount.xyz (Registered 48h ago)',
-              'Target Intent': 'bankpay://transfer (Direct API call to mobile banking apps)',
+              'Target Domain': 'pay-transit-secure.xyz',
+              'Official Authority': 'transit.metrocity.gov',
+              'Domain Age': '36 hours old (High fraud probability)',
+              'Registrar': 'Anonymous Privacy Shield Ltd.',
+            },
+            threatIndicator: 'FRAUDULENT DESTINATION: Unofficial domain impersonation.',
+            evidenceYielded: {
+              id: 'ev-fake-qr-domain',
+              title: 'Spoofed Transit Payment Domain',
+              category: 'Domain & Infrastructure',
+              description: 'Decoded QR destination points to newly registered pay-transit-secure.xyz instead of official gov domain.',
+              technicalDetail: 'Domain age 36 hours. TLD .xyz with anonymous registrar.',
+            },
+          },
+        },
+        {
+          id: 'target-redirect-chain',
+          label: 'Deep Link Intent & Wallet Extraction Analysis',
+          requiredAbility: 'ANALYZE',
+          previewValue: 'intent://pay?recipient=crypto-escrow-wallet&amount=250',
+          revealedDetail: {
+            heading: 'Automated Wallet Draining Deep Link',
+            summary: 'The QR destination redirects into an OS-level deep link (intent://) configured to prompt the user\'s default mobile banking or payment app with a pre-populated $250 transfer to a crypto wallet address.',
+            technicalData: {
+              'Protocol Intent': 'intent://pay (Mobile wallet invoke)',
+              'Extraction Amount': '$250.00 USD',
+              'Recipient': 'crypto-escrow-wallet-0x992B...',
+              'Target Action': 'Irreversible automated wallet transfer',
             },
             threatIndicator: 'CRITICAL FINANCIAL THREAT: Pre-populated mobile wallet extraction.',
             evidenceYielded: {
@@ -631,34 +832,72 @@ DECODED BARCODE PAYLOAD:
               title: 'Malicious Mobile Payment Deep Link',
               category: 'Payload Inspection',
               description: 'Shortened QR code resolved to a deep-link intent attempting to trigger instant fund transfer.',
-              technicalDetail: 'Intent URI: bankpay://transfer?recipient=crypto-escrow-wallet. Target: metro-city-tickets-discount.xyz.',
+              technicalDetail: 'Intent URI: bankpay://transfer?recipient=crypto-escrow-wallet. Target: pay-transit-secure.xyz.',
             },
+          },
+        },
+        {
+          id: 'target-signage-verification',
+          label: 'Official Municipal Protocol & Signage Verification',
+          requiredAbility: 'VERIFY',
+          previewValue: 'Metro Transit Bulletin: Official kiosks never use stickers',
+          revealedDetail: {
+            heading: 'Official Institutional Signage Policy',
+            summary: 'Official Metro Transit regulations strictly forbid handwritten notices or adhesive stickers. Kiosk maintenance issues must be resolved inside the station master booth or via the official Metro Transit mobile application.',
+            technicalData: {
+              'Metro Rule 412': 'No adhesive labels authorized on terminals',
+              'Discount Policy': 'Discounts apply automatically at turnstile via student ID',
+              'Verification Status': 'Sticker is 100% unauthorized contraband',
+            },
+            threatIndicator: 'POLICY VIOLATION: Sticker contradicts municipal operating protocol.',
           },
         },
       ],
     },
     decisions: [
       {
+        id: 'decision-scan-pay',
+        label: 'Scan the sticker and authorize the payment in Tariq\'s mobile banking app',
+        type: 'reckless',
+        description: 'Aim phone camera at the QR code and authorize the payment prompt.',
+        trustChange: -16,
+        isOptimal: false,
+        immediateReaction: 'FUNDS EXFILTRATED: $250 transferred to attacker crypto escrow wallet.',
+        consequenceText: 'Tariq\'s banking app confirms a $250 wire to an untraceable wallet. His bank account is drained, and no train ticket is issued. The transaction cannot be reversed.',
+        screenEffect: 'threat-alert',
+      },
+      {
+        id: 'decision-scan-just-see',
+        label: 'Scan "just to see" what page loads, but refuse to enter payment details',
+        type: 'reckless',
+        description: 'Open the URL in the mobile browser to inspect the design without paying.',
+        trustChange: -10,
+        isOptimal: false,
+        immediateReaction: 'MALICIOUS PERMISSION REQUEST: Page prompts for camera, location, and contacts.',
+        consequenceText: 'The mobile page triggers a malicious browser exploit attempt and requests dangerous permissions. Tariq\'s device fingerprint and location are logged on the attacker\'s command server.',
+        screenEffect: 'caution',
+      },
+      {
+        id: 'decision-cover-ask-stranger',
+        label: 'Cover the code and ask another commuter to test scan it on their phone',
+        type: 'reckless',
+        description: 'Ask an unsuspecting stranger to scan the code to verify if it works.',
+        trustChange: -8,
+        isOptimal: false,
+        immediateReaction: 'COLLATERAL HARM: Stranger scans code and encounters banking intent.',
+        consequenceText: 'Transferring unverified cyber hazards to innocent third parties breaches ethical security conduct and puts fellow commuters at immediate financial risk.',
+        screenEffect: 'caution',
+      },
+      {
         id: 'decision-peel-report-qr',
-        label: 'Stop Tariq, alert transit security, and report the fraudulent sticker',
+        label: 'Do not scan: photograph sticker, report to Station Security, and pay via official counter',
         type: 'defensive',
-        description: 'Prevent the scan, photograph the sticker as evidence, and report the tampered kiosk to station staff.',
+        description: 'Stop Tariq from scanning, document the sticker seam as physical evidence, report the tampered kiosk to station staff, and pay through official kiosk app.',
         trustChange: 15,
         isOptimal: true,
         immediateReaction: 'Station security removes 6 identical stickers across the terminal and issues a commuter warning.',
-        consequenceText: 'Tariq checks his phone: "I almost authorized a $250 transfer to a crypto wallet! Thank you for spotting the sticker seam."',
+        consequenceText: 'Tariq checks his phone: "I almost authorized a $250 transfer to a crypto wallet! Thank you for spotting the sticker seam." Station staff audit every terminal in the network.',
         screenEffect: 'clean',
-      },
-      {
-        id: 'decision-scan-qr',
-        label: 'Let Tariq scan the QR code to see if the discount page loads',
-        type: 'reckless',
-        description: 'Scan the sticker using a mobile phone camera.',
-        trustChange: -12,
-        isOptimal: false,
-        immediateReaction: 'Banking application prompted with high-value transfer authorization request.',
-        consequenceText: 'The mobile browser opens the banking intent. If Tariq biometric-confirms without reading the recipient field, the funds are irreversibly wired.',
-        screenEffect: 'threat-alert',
       },
     ],
     learningTakeaways: [
@@ -672,6 +911,11 @@ DECODED BARCODE PAYLOAD:
       description: 'Compile cryptographic evidence dossiers and dispatch incident reports to CERT / SecOps.',
       tier: 'advanced',
       command: 'report --cert-dispatch',
+    },
+    completionCertificate: {
+      id: 'CERT-QR-04',
+      title: 'Physical-Digital Fraud Response',
+      field: 'Physical-Digital Fraud Response',
     },
   },
 };

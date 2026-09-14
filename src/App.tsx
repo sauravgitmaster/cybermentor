@@ -6,6 +6,9 @@ import {
   TrustChangeRecord,
   Achievement,
   CyberSkillProfile,
+  CampaignFlags,
+  AfterActionReport as AARType,
+  EthicsChangeRecord,
 } from './types';
 import { SavedWorldLocation } from './types/world';
 import {
@@ -20,6 +23,7 @@ import {
   savePlayerState,
   resetPlayerState,
 } from './data/initialState';
+import { remediateConsequence } from './data/consequences';
 import { api } from './services/api';
 import { GameHeader } from './components/GameHeader';
 import { LandingIntro } from './components/LandingIntro';
@@ -34,6 +38,9 @@ import { AchievementToast } from './components/AchievementToast';
 import { SkillCheckModal } from './components/SkillCheckModal';
 import { DailyChallengeModal } from './components/DailyChallengeModal';
 import { ScenarioOpsView } from './components/scenarios/ScenarioOpsView';
+import { ConsequenceInbox } from './components/ConsequenceInbox';
+import { SquadBoard } from './components/SquadBoard';
+import { EthicsWorkspace } from './components/EthicsWorkspace';
 import {
   setAudioMuted,
   getAudioMuted,
@@ -75,6 +82,9 @@ export default function App() {
   const [activeAchievementToast, setActiveAchievementToast] = useState<Achievement | null>(null);
   const [isSkillCheckOpen, setIsSkillCheckOpen] = useState<boolean>(false);
   const [isDailyChallengeOpen, setIsDailyChallengeOpen] = useState<boolean>(false);
+  const [isConsequencesOpen, setIsConsequencesOpen] = useState<boolean>(false);
+  const [isSquadBoardOpen, setIsSquadBoardOpen] = useState<boolean>(false);
+  const [isEthicsOpen, setIsEthicsOpen] = useState<boolean>(false);
 
   // Synchronize URL hash when tab changes
   useEffect(() => {
@@ -258,6 +268,74 @@ export default function App() {
     setIsSkillCheckOpen(false);
   };
 
+  const handleUpdateCampaignFlags = (flags: Partial<CampaignFlags>) => {
+    setPlayer((prev) => ({
+      ...prev,
+      campaignFlags: {
+        ...(prev.campaignFlags || {}),
+        ...flags,
+      } as CampaignFlags,
+    }));
+  };
+
+  const handleRemediateConsequence = (consequenceId: string) => {
+    setPlayer((prev) => {
+      const updatedFlags = remediateConsequence(prev.campaignFlags, consequenceId);
+      const newTrust = Math.min(100, (prev.digitalTrust || 0) + 8);
+      const record: TrustChangeRecord = {
+        id: `trust-${Date.now()}`,
+        timestamp: Date.now(),
+        delta: 8,
+        reason: `Remediated Campaign Incident [${consequenceId}]`,
+        newScore: newTrust,
+      };
+
+      return {
+        ...prev,
+        campaignFlags: updatedFlags,
+        digitalTrust: newTrust,
+        trustHistory: [record, ...prev.trustHistory],
+      };
+    });
+  };
+
+  const handleRecordAfterActionReport = (report: AARType) => {
+    setPlayer((prev) => ({
+      ...prev,
+      aaReports: [report, ...(prev.aaReports || []).filter((r) => r.id !== report.id)],
+    }));
+  };
+
+  const handleRecordEthicsDecision = (delta: number, principle: string, reasoning: string) => {
+    setPlayer((prev) => {
+      const currentEthics = prev.ethicsScore ?? 50;
+      const nextEthics = Math.max(0, Math.min(100, currentEthics + delta));
+      const record: EthicsChangeRecord = {
+        id: `eth-${Date.now()}`,
+        opId: principle,
+        delta,
+        principle,
+        reasoningSummary: reasoning,
+        timestamp: Date.now(),
+        newScore: nextEthics,
+      };
+
+      return {
+        ...prev,
+        ethicsScore: nextEthics,
+        ethicsHistory: [record, ...(prev.ethicsHistory || [])],
+      };
+    });
+  };
+
+  const handleUpdateSquadInfo = (squadCode: string, callsign: string) => {
+    setPlayer((prev) => ({
+      ...prev,
+      squadCode,
+      squadCallsign: callsign,
+    }));
+  };
+
   const handleSaveWorldLocation = useCallback((saved: SavedWorldLocation) => {
     saveWorldLocationToStorage(saved);
   }, []);
@@ -369,6 +447,9 @@ export default function App() {
           onOpenHelp={() => setIsHelpOpen(true)}
           onOpenSkillCheck={() => setIsSkillCheckOpen(true)}
           onOpenDailyChallenge={() => setIsDailyChallengeOpen(true)}
+          onOpenConsequences={() => setIsConsequencesOpen(true)}
+          onOpenSquadBoard={() => setIsSquadBoardOpen(true)}
+          onOpenEthics={() => setIsEthicsOpen(true)}
           onResetProgress={handleResetProgress}
         />
       )}
@@ -438,6 +519,12 @@ export default function App() {
             onUnlockAchievement={handleUnlockAchievement}
             onCompleteMission={handleCompleteMission}
             onAddEvidence={handleAddEvidence}
+            onProceedNextMission={(nextId) => {
+              setActiveMissionId(nextId);
+              setCurrentTab('mission');
+            }}
+            onRecordAfterActionReport={handleRecordAfterActionReport}
+            onUpdateCampaignFlags={handleUpdateCampaignFlags}
           />
         )}
 
@@ -488,6 +575,33 @@ export default function App() {
           onRecordDecision={(points, reason) => {
             handleRecordTrustChange(points, reason);
           }}
+        />
+      )}
+
+      {/* Persistent Campaign Consequences / Incident Desk */}
+      {isConsequencesOpen && (
+        <ConsequenceInbox
+          flags={player.campaignFlags || ({} as any)}
+          onClose={() => setIsConsequencesOpen(false)}
+          onRemediate={handleRemediateConsequence}
+        />
+      )}
+
+      {/* Squad Leaderboard Modal */}
+      {isSquadBoardOpen && (
+        <SquadBoard
+          player={player}
+          onClose={() => setIsSquadBoardOpen(false)}
+          onUpdateSquadInfo={handleUpdateSquadInfo}
+        />
+      )}
+
+      {/* Cyber Ethics Engine Dilemma Workspace */}
+      {isEthicsOpen && (
+        <EthicsWorkspace
+          player={player}
+          onClose={() => setIsEthicsOpen(false)}
+          onRecordDecision={handleRecordEthicsDecision}
         />
       )}
 

@@ -9,6 +9,8 @@ import {
   HelpCircle,
   FileSearch,
   Cpu,
+  Brain,
+  FileCheck2,
 } from 'lucide-react';
 import {
   MissionData,
@@ -16,9 +18,14 @@ import {
   DecisionOption,
   InspectableTarget,
   MentorAnalysisResponse,
+  AfterActionReport as AARType,
+  CampaignFlags,
 } from '../types';
 import { InvestigationPanel } from './InvestigationPanel';
 import { MentorDebrief } from './MentorDebrief';
+import { DoctrineBriefView } from './DoctrineBriefView';
+import { SocraticMentorModal } from './SocraticMentorModal';
+import { AfterActionReport } from './AfterActionReport';
 import { getNextMissionId, MISSIONS } from '../data/missions';
 import {
   playClickSound,
@@ -38,6 +45,8 @@ interface MissionWorkspaceProps {
   onAddEvidence: (evidence: any) => void;
   onProceedNextMission?: (nextMissionId: string) => void;
   onUnlockAchievement?: (achId: string) => void;
+  onRecordAfterActionReport?: (report: AARType) => void;
+  onUpdateCampaignFlags?: (flags: Partial<CampaignFlags>) => void;
 }
 
 export const MissionWorkspace: React.FC<MissionWorkspaceProps> = ({
@@ -51,6 +60,8 @@ export const MissionWorkspace: React.FC<MissionWorkspaceProps> = ({
   onAddEvidence,
   onProceedNextMission,
   onUnlockAchievement,
+  onRecordAfterActionReport,
+  onUpdateCampaignFlags,
 }) => {
   const [stage, setStage] = useState<
     'briefing' | 'investigation' | 'decision' | 'consequence' | 'debrief'
@@ -62,6 +73,9 @@ export const MissionWorkspace: React.FC<MissionWorkspaceProps> = ({
   const [mentorFeedback, setMentorFeedback] =
     useState<MentorAnalysisResponse | null>(null);
   const [isLoadingFeedback, setIsLoadingFeedback] = useState<boolean>(false);
+  const [isSocraticOpen, setIsSocraticOpen] = useState<boolean>(false);
+  const [currentAAR, setCurrentAAR] = useState<AARType | null>(null);
+  const [debriefTab, setDebriefTab] = useState<'mentor' | 'aar'>('mentor');
   const [unlockedAbilityData, setUnlockedAbilityData] = useState<{
     name: string;
     description: string;
@@ -76,6 +90,9 @@ export const MissionWorkspace: React.FC<MissionWorkspaceProps> = ({
     setChosenDecision(null);
     setMentorFeedback(null);
     setIsLoadingFeedback(false);
+    setIsSocraticOpen(false);
+    setCurrentAAR(null);
+    setDebriefTab('mentor');
     setUnlockedAbilityData(null);
   }, [mission.id]);
 
@@ -120,6 +137,21 @@ export const MissionWorkspace: React.FC<MissionWorkspaceProps> = ({
       `${mission.title}: ${decision.label.slice(0, 48)}...`
     );
 
+    // If decision is non-optimal, trigger campaign consequences
+    if (!decision.isOptimal && onUpdateCampaignFlags) {
+      if (mission.id === 'mission-01-email') {
+        onUpdateCampaignFlags({ phishCompromised: true, credentialsHarvested: true });
+      } else if (mission.id === 'mission-02-usb') {
+        onUpdateCampaignFlags({ badUsbExecuted: true, malwareOnEndpoint: true });
+      } else if (mission.id === 'mission-03-wifi') {
+        onUpdateCampaignFlags({ wifiSessionHijacked: true });
+      } else if (mission.id === 'mission-04-qr-scam') {
+        onUpdateCampaignFlags({ qrPaymentLeaked: true });
+      } else if (mission.id === 'mission-05-social-eng') {
+        onUpdateCampaignFlags({ unauthorizedAccessAttempt: true });
+      }
+    }
+
     // Evidence Expert Bonus: if defensive choice AND operative selected corroborating clues
     let evidenceBonusAwarded = false;
     if (decision.isOptimal && selectedEvidenceClues.length > 0) {
@@ -138,6 +170,40 @@ export const MissionWorkspace: React.FC<MissionWorkspaceProps> = ({
         description: mission.rewardAbility.description,
         command: mission.rewardAbility.command,
       });
+    }
+
+    // Build After-Action Report
+    const gatheredIocs = mission.investigationWorkspace.targets
+      .filter((t) => inspectedTargetIds.includes(t.id))
+      .map((t) => `${t.label}: ${t.revealedDetail.evidenceYielded?.title || t.hint}`);
+
+    const missedIocs = mission.investigationWorkspace.targets
+      .filter((t) => !inspectedTargetIds.includes(t.id))
+      .map((t) => `${t.label}: ${t.hint}`);
+
+    const report: AARType = {
+      id: `aar-${mission.id}-${Date.now()}`,
+      missionId: mission.id,
+      title: `${mission.code}: ${mission.title}`,
+      decidedAt: Date.now(),
+      choiceId: decision.id,
+      choiceLabel: decision.label,
+      wasOptimal: decision.isOptimal,
+      trustDelta: decision.trustChange,
+      iocsFound: gatheredIocs,
+      signalsMissed: missedIocs,
+      takeaway: decision.isOptimal
+        ? `Defensive zero-trust verification maintained under ${mission.threatCategory}. Technical indicators successfully uncovered and sanitized.`
+        : `Defensive perimeter bypassed under ${mission.threatCategory}. Action triggered active campaign consequences requiring incident containment.`,
+      mentorSummary: decision.consequenceText,
+      skillDeltas: {
+        phishing: decision.isOptimal ? 10 : -10,
+      },
+    };
+
+    setCurrentAAR(report);
+    if (onRecordAfterActionReport) {
+      onRecordAfterActionReport(report);
     }
 
     // Mark mission completed in player state
@@ -262,6 +328,15 @@ export const MissionWorkspace: React.FC<MissionWorkspaceProps> = ({
             </div>
           </div>
 
+          {/* Technical Doctrine & Attacker Posture */}
+          {mission.doctrineBrief && (
+            <DoctrineBriefView
+              doctrine={mission.doctrineBrief}
+              threatCategory={mission.threatCategory}
+              defaultExpanded={true}
+            />
+          )}
+
           {/* Action to start investigation */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 rounded-xl border border-[#1b2332] bg-[#0c1017] p-4">
             <div className="text-xs text-slate-400 flex items-center gap-2">
@@ -299,11 +374,25 @@ export const MissionWorkspace: React.FC<MissionWorkspaceProps> = ({
           />
 
           {/* Bottom Sticky Action Bar */}
-          <div className="flex items-center justify-between rounded-lg border border-[#1c2436] bg-[#0c1018] p-4">
-            <div className="text-xs font-mono text-slate-400">
-              Discovered{' '}
-              <strong className="text-cyan-300">{inspectedTargetIds.length}</strong> of{' '}
-              {mission.investigationWorkspace.targets.length} technical indicators
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-lg border border-[#1c2436] bg-[#0c1018] p-4">
+            <div className="flex items-center gap-3">
+              <button
+                id="open-socratic-mentor-btn"
+                onClick={() => {
+                  playClickSound();
+                  setIsSocraticOpen(true);
+                }}
+                className="px-3.5 py-2 rounded-lg border border-cyan-800/80 bg-cyan-950/40 hover:bg-cyan-900/60 text-cyan-300 text-xs font-mono font-bold transition-all flex items-center gap-2 shadow-sm"
+              >
+                <Brain className="h-4 w-4 text-cyan-400" />
+                <span>CONSULT SOCRATIC MENTOR</span>
+              </button>
+
+              <div className="text-xs font-mono text-slate-400">
+                Discovered{' '}
+                <strong className="text-cyan-300">{inspectedTargetIds.length}</strong> of{' '}
+                {mission.investigationWorkspace.targets.length} technical indicators
+              </div>
             </div>
 
             <button
@@ -503,16 +592,86 @@ export const MissionWorkspace: React.FC<MissionWorkspaceProps> = ({
         </div>
       )}
 
-      {/* PHASE 5: MENTOR DEBRIEF & LEARNING UNLOCKS */}
+      {/* PHASE 5: MENTOR DEBRIEF & LEARNING UNLOCKS / AFTER-ACTION REPORT */}
       {stage === 'debrief' && chosenDecision && (
-        <MentorDebrief
+        <div className="space-y-4">
+          {/* Debrief View Mode Switcher */}
+          <div className="flex items-center justify-center gap-2 border-b border-[#1b2538] pb-3">
+            <button
+              id="debrief-tab-mentor-btn"
+              onClick={() => {
+                playClickSound();
+                setDebriefTab('mentor');
+              }}
+              className={`px-4 py-2 rounded-xl text-xs font-mono font-bold transition-all flex items-center gap-2 ${
+                debriefTab === 'mentor'
+                  ? 'bg-cyan-500 text-slate-950 shadow-md'
+                  : 'bg-[#111724] text-slate-400 hover:text-slate-200 border border-[#1f2a3e]'
+              }`}
+            >
+              <Cpu className="h-4 w-4" />
+              <span>AI MENTOR ANALYSIS</span>
+            </button>
+
+            {currentAAR && (
+              <button
+                id="debrief-tab-aar-btn"
+                onClick={() => {
+                  playClickSound();
+                  setDebriefTab('aar');
+                }}
+                className={`px-4 py-2 rounded-xl text-xs font-mono font-bold transition-all flex items-center gap-2 ${
+                  debriefTab === 'aar'
+                    ? 'bg-cyan-500 text-slate-950 shadow-md'
+                    : 'bg-[#111724] text-slate-400 hover:text-slate-200 border border-[#1f2a3e]'
+                }`}
+              >
+                <FileCheck2 className="h-4 w-4" />
+                <span>AFTER-ACTION REPORT (AAR)</span>
+              </button>
+            )}
+          </div>
+
+          {debriefTab === 'mentor' ? (
+            <MentorDebrief
+              mission={mission}
+              player={player}
+              chosenDecision={chosenDecision}
+              mentorFeedback={mentorFeedback}
+              isLoadingFeedback={isLoadingFeedback}
+              unlockedAbility={unlockedAbilityData}
+              onReturnToWorld={onReturnToWorldMap || onExitMission}
+            />
+          ) : currentAAR ? (
+            <AfterActionReport
+              report={currentAAR}
+              mission={mission}
+              chosenDecision={chosenDecision}
+              onProceedNext={() => {
+                if (nextMissionId && onProceedNextMission) {
+                  onProceedNextMission(nextMissionId);
+                } else if (onReturnToWorldMap) {
+                  onReturnToWorldMap();
+                } else {
+                  onExitMission();
+                }
+              }}
+              onReturnToMap={onReturnToWorldMap || onExitMission}
+              nextMissionId={nextMissionId}
+            />
+          ) : null}
+        </div>
+      )}
+
+      {/* Socratic In-Mission Consultation Modal */}
+      {isSocraticOpen && (
+        <SocraticMentorModal
           mission={mission}
+          stage={stage}
+          inspectedTargetCount={inspectedTargetIds.length}
+          totalTargetCount={mission.investigationWorkspace.targets.length}
           player={player}
-          chosenDecision={chosenDecision}
-          mentorFeedback={mentorFeedback}
-          isLoadingFeedback={isLoadingFeedback}
-          unlockedAbility={unlockedAbilityData}
-          onReturnToWorld={onReturnToWorldMap || onExitMission}
+          onClose={() => setIsSocraticOpen(false)}
         />
       )}
     </div>

@@ -35,11 +35,50 @@ export interface TrustChangeRecord {
   newScore?: number;
 }
 
+export interface CampaignFlags {
+  credentialsHarvested: boolean; // clicked fake portal or opened dropper in mission-01
+  malwareOnEndpoint: boolean; // opened pdf.exe or plugged BadUSB
+  wifiSessionHijacked: boolean; // joined rogue AP
+  qrPaymentLeaked: boolean; // scanned malicious QR
+  jordanAccountFollowupSent: boolean;
+  itIncidentOpened: boolean;
+  unauthorizedAccessAttempt?: boolean;
+  phishCompromised?: boolean;
+  badUsbExecuted?: boolean;
+}
+
+export interface EthicsChangeRecord {
+  id: string;
+  opId: string;
+  delta: number;
+  principle: string; // consent | harm | proportionality | duty-to-report | privacy | integrity | stewardship
+  reasoningSummary: string;
+  timestamp: number;
+  newScore: number;
+}
+
+export interface AfterActionReport {
+  id: string;
+  missionId: string;
+  title: string;
+  decidedAt: number;
+  choiceId: string;
+  choiceLabel: string;
+  wasOptimal: boolean;
+  trustDelta: number;
+  ethicsDelta?: number;
+  iocsFound: string[];
+  signalsMissed: string[];
+  takeaway: string;
+  mentorSummary: string;
+  skillDeltas: Partial<Pick<CyberSkillProfile, 'phishing' | 'privacy' | 'deviceSecurity' | 'socialEngineering'>>;
+}
+
 export interface Achievement {
   id: string;
   title: string;
   description: string;
-  category: 'Forensics' | 'Vigilance' | 'Containment' | 'Mastery';
+  category: 'Forensics' | 'Vigilance' | 'Containment' | 'Mastery' | 'Ethics';
   unlocked: boolean;
   unlockedAt?: number;
 }
@@ -61,6 +100,12 @@ export interface CyberSkillProfile {
   privacy: number; // 0 - 100 percentage
   deviceSecurity: number; // 0 - 100 percentage
   socialEngineering: number; // 0 - 100 percentage
+  ethics?: number; // 0 - 100 percentage
+  networkSecurity?: number;
+  hardwareForensics?: number;
+  cryptography?: number;
+  incidentResponse?: number;
+  ethicsDilemmas?: number;
   overallScore?: number;
   lastAssessedAt?: number;
   demonstratedStrengths: string[];
@@ -74,6 +119,17 @@ export interface PlayerState {
   level: number;
   title: string;
   digitalTrust: number; // MUST start at 0
+  trustScore?: number; // alias for digitalTrust for components
+  ethicsScore: number; // 0-100, starts at 0, separate from digitalTrust
+  ethicsHistory: EthicsChangeRecord[];
+  campaignFlags: CampaignFlags;
+  recommendedMissionId: string | null;
+  recommendedScenarioId: string | null;
+  squadCode: string | null;
+  squadCallsign: string | null;
+  completedEthicsOps: string[];
+  compromisedMissionIds: string[]; // missions where player picked reckless / non-optimal
+  aaReports: AfterActionReport[];
   abilities: CyberAbility[];
   evidence: EvidenceItem[];
   completedMissions: string[];
@@ -111,6 +167,7 @@ export interface InspectableTarget {
   label: string;
   requiredAbility: string; // e.g. "INSPECT", "VERIFY", "ANALYZE"
   previewValue: string;
+  isRedHerring?: boolean;
   revealedDetail: {
     heading: string;
     summary: string;
@@ -148,13 +205,21 @@ export interface MissionData {
   difficulty: 'Basic' | 'Intermediate' | 'Advanced';
   requiredTrust: number;
   npc: NPC;
+  doctrineBrief?: {
+    title: string;
+    durationHint: string;
+    facts: [string, string, string];
+    attackerModel: string;
+    whatGoodLooksLike: string;
+    relatedAbility: string;
+  };
   briefing: {
     situation: string;
     npcDialogue: string;
     objective: string;
   };
   investigationWorkspace: {
-    type: 'email-client' | 'hardware-analyzer' | 'network-scanner';
+    type: 'email-client' | 'hardware-analyzer' | 'network-scanner' | 'qr-inspector' | 'ethics-briefing';
     title: string;
     interfaceMetadata: {
       clientName: string;

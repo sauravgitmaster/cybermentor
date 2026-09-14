@@ -322,4 +322,87 @@ export const api = {
       return 'SecOps comms relay is currently recalibrating. Rely on your local threat indicators and verify before trust.';
     }
   },
+
+  // 6. Cyber Ethics Analysis
+  async analyzeEthics(payload: {
+    ethicsOpId: string;
+    opTitle: string;
+    chosenOptionId: string;
+    chosenOptionLabel: string;
+    justification: string;
+    operative: { name: string; trustScore: number; ethicsScore: number };
+    scores: Record<string, number>;
+  }): Promise<any> {
+    try {
+      const res = await fetch('/api/mentor/ethics', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error('Ethics evaluation failed');
+      const data = await res.json();
+      return data.analysis;
+    } catch {
+      return null;
+    }
+  },
+
+  // 7. Socratic In-Mission Guidance
+  async askSocraticMentor(payload: {
+    missionId: string;
+    missionTitle: string;
+    stage: string;
+    inspectedTargetCount: number;
+    totalTargetCount: number;
+    playerDoubt?: string;
+    operative: { name: string; trustScore: number };
+  }): Promise<{ guidingQuestion: string; conceptNudge: string; mentorObservation: string } | null> {
+    try {
+      const res = await fetch('/api/mentor/socratic', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error('Socratic mentor unavailable');
+      const data = await res.json();
+      return data.socratic;
+    } catch {
+      return null;
+    }
+  },
+
+  // 8. Squad Leaderboard Comms
+  async getSquadLeaderboard(): Promise<any[]> {
+    try {
+      const res = await fetch('/api/squad/board');
+      if (!res.ok) return [];
+      const data = await res.json();
+      return data.leaderboard || [];
+    } catch {
+      return [];
+    }
+  },
+
+  async submitSquadScore(payload: {
+    squadCode: string;
+    squadName: string;
+    callsign: string;
+    trustScore: number;
+    ethicsScore: number;
+    missionsCompleted: number;
+    badgesUnlocked: number;
+    teamSize: number;
+  }): Promise<any> {
+    try {
+      const res = await fetch('/api/squad/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch {
+      return null;
+    }
+  },
 };

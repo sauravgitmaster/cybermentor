@@ -165,13 +165,52 @@ export const INITIAL_ACHIEVEMENTS: Achievement[] = [
     category: 'Mastery',
     unlocked: false,
   },
+  {
+    id: 'ethics-first-call',
+    title: 'First Ethical Call',
+    description: 'Deliberated on grey-area cyber dilemmas and completed an ethics operation.',
+    category: 'Ethics',
+    unlocked: false,
+  },
+  {
+    id: 'clean-hands',
+    title: 'Clean Hands',
+    description: 'Maintained a clean streak of consecutive optimal defensive judgments.',
+    category: 'Ethics',
+    unlocked: false,
+  },
+  {
+    id: 'no-collateral',
+    title: 'No Collateral Harm',
+    description: 'Chose the least-harmful and highest-integrity path across ethics scenarios.',
+    category: 'Ethics',
+    unlocked: false,
+  },
+  {
+    id: 'consequence-recovered',
+    title: 'Consequence Remediated',
+    description: 'Remediated an earlier digital compromise via coordinated incident response.',
+    category: 'Containment',
+    unlocked: false,
+  },
 ];
+
+export const DEFAULT_CAMPAIGN_FLAGS = {
+  credentialsHarvested: false,
+  malwareOnEndpoint: false,
+  wifiSessionHijacked: false,
+  qrPaymentLeaked: false,
+  jordanAccountFollowupSent: false,
+  itIncidentOpened: false,
+  unauthorizedAccessAttempt: false,
+};
 
 export const DEFAULT_SKILL_PROFILE = {
   phishing: 50,
   privacy: 50,
   deviceSecurity: 50,
   socialEngineering: 50,
+  ethics: 50,
   overallScore: 50,
   demonstratedStrengths: ['Curiosity', 'Eagerness to Learn'],
   demonstratedWeaknesses: ['Initial Assessment Pending'],
@@ -253,6 +292,16 @@ export const DEFAULT_PLAYER_STATE: PlayerState = {
   level: 1,
   title: 'Digital Beginner',
   digitalTrust: 0, // MUST start at 0
+  ethicsScore: 0,
+  ethicsHistory: [],
+  campaignFlags: DEFAULT_CAMPAIGN_FLAGS,
+  recommendedMissionId: null,
+  recommendedScenarioId: null,
+  squadCode: null,
+  squadCallsign: null,
+  completedEthicsOps: [],
+  compromisedMissionIds: [],
+  aaReports: [],
   abilities: INITIAL_ABILITIES,
   evidence: [],
   completedMissions: [],
@@ -277,9 +326,33 @@ export function loadSavedPlayerState(): PlayerState {
     if (typeof parsed.digitalTrust !== 'number') {
       parsed.digitalTrust = 0;
     }
+    // Ensure ethicsScore starts at 0
+    if (typeof parsed.ethicsScore !== 'number') {
+      parsed.ethicsScore = 0;
+    }
+    if (!Array.isArray(parsed.ethicsHistory)) {
+      parsed.ethicsHistory = [];
+    }
+    parsed.campaignFlags = {
+      ...DEFAULT_CAMPAIGN_FLAGS,
+      ...(parsed.campaignFlags || {}),
+    };
+    if (!parsed.recommendedMissionId) parsed.recommendedMissionId = null;
+    if (!parsed.recommendedScenarioId) parsed.recommendedScenarioId = null;
+    if (!parsed.squadCode) parsed.squadCode = null;
+    if (!parsed.squadCallsign) parsed.squadCallsign = null;
+    if (!Array.isArray(parsed.completedEthicsOps)) parsed.completedEthicsOps = [];
+    if (!Array.isArray(parsed.compromisedMissionIds)) parsed.compromisedMissionIds = [];
+    if (!Array.isArray(parsed.aaReports)) parsed.aaReports = [];
+
     // Ensure skillProfile exists
     if (!parsed.skillProfile) {
       parsed.skillProfile = DEFAULT_SKILL_PROFILE;
+    } else {
+      parsed.skillProfile = {
+        ...DEFAULT_SKILL_PROFILE,
+        ...parsed.skillProfile,
+      };
     }
     // Ensure title and level are refreshed
     const calculated = computePlayerLevel(

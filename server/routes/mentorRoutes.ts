@@ -346,3 +346,188 @@ Keep the tone calm, professional, tactical, and supportive.`;
     answer,
   });
 });
+
+// POST /api/mentor/ethics - Evaluates ethical dilemma decisions against principles & codes of conduct
+mentorRouter.post("/ethics", async (req, res) => {
+  const {
+    ethicsOpId,
+    opTitle,
+    chosenOptionId,
+    chosenOptionLabel,
+    justification = "",
+    operative = { name: "Cadet", trustScore: 30, ethicsScore: 50 },
+    scores = {},
+  } = req.body;
+
+  const client = getGeminiClient();
+
+  if (client) {
+    const prompt = `You are CyberMentor AI, an expert cyber ethicist evaluating a decision made by operative ${operative.name} on dilemma "${opTitle || ethicsOpId}".
+
+Operative Decision:
+- Chosen Option: [${chosenOptionId}] "${chosenOptionLabel}"
+- Operative's Stated Justification: "${justification || "No justification stated"}"
+- Principle Scores Delta: ${JSON.stringify(scores)}
+
+Respond with a JSON object matching this exact schema:
+{
+  "verdictTone": "supports" | "challenges" | "mixed",
+  "principles": [
+    { "name": "harm", "assessment": "<short assessment>" },
+    { "name": "duty-to-report", "assessment": "<short assessment>" }
+  ],
+  "whoWasHarmed": ["<party 1>", "<party 2>"],
+  "professionalStandard": "<reference to ACM Code of Ethics, (ISC)², or CISA CVD Guidelines>",
+  "betterAction": "<clear guidance on optimal ethical balance>",
+  "realWorldRule": "<actionable real-world rule of thumb>",
+  "mentorVoice": "<direct, respectful mentor coaching voice in 2-3 sentences>"
+}
+Only return valid JSON.`;
+
+    const candidateModels = ["gemini-2.5-flash", "gemini-2.0-flash"];
+    for (const modelName of candidateModels) {
+      try {
+        const response = await client.models.generateContent({
+          model: modelName,
+          contents: prompt,
+          config: {
+            responseMimeType: "application/json",
+            temperature: 0.3,
+          },
+        });
+
+        if (response.text) {
+          const parsed = JSON.parse(response.text);
+          return res.json({
+            success: true,
+            source: "gemini",
+            analysis: parsed,
+          });
+        }
+      } catch (err) {
+        console.warn(`[MentorEthics] Model ${modelName} error, attempting fallback.`);
+      }
+    }
+  }
+
+  // Deterministic Ethics Evaluation Fallback
+  const isOptimal = chosenOptionId === 'D' || (ethicsOpId === 'ethics-op-zero-day' && chosenOptionId === 'C') || (ethicsOpId === 'ethics-op-credential-scraping' && chosenOptionId === 'C');
+
+  let verdictTone: 'supports' | 'challenges' | 'mixed' = isOptimal ? 'supports' : 'challenges';
+  let whoWasHarmed: string[] = [];
+  let professionalStandard = 'ACM Code of Ethics Section 1.2: "Avoid harm" and (ISC)² Canon 1: "Protect society and the public trust."';
+  let betterAction = '';
+  let realWorldRule = 'Coordinated Vulnerability Disclosure (CVD) allows defense teams to protect end users before threat actors exploit the vulnerability.';
+  let mentorVoice = '';
+
+  if (isOptimal) {
+    whoWasHarmed = ['No innocent parties harmed; institutional risk managed with oversight.'];
+    betterAction = 'You prioritized collective defense, procedural transparency, and individual rights over quick profit or silent evasion.';
+    mentorVoice = `Exemplary ethical reasoning, Operative ${operative.name}. You recognized that cybersecurity is ultimately about human stewardship, not merely technical prowess.`;
+  } else {
+    whoWasHarmed = ['Enrolled students whose privacy is exposed', 'Municipal residents reliant on drinking water safety', 'Civic protesters subjected to warrantless profiling'];
+    betterAction = 'Seek established disclosure channels (CISA/CERT/CISO), invoke whistleblower protections, and never monetize vulnerabilities without defensive remediation.';
+    mentorVoice = `Reflect on this outcome, Operative ${operative.name}. Technical curiosity or financial incentives never justify exposing innocent stakeholders to unmitigated hazards.`;
+  }
+
+  return res.json({
+    success: true,
+    source: 'knowledge-engine',
+    analysis: {
+      verdictTone,
+      principles: [
+        { name: 'harm', assessment: isOptimal ? 'Mitigated collective harm through verified remediation' : 'Exposed innocent stakeholders to active risk' },
+        { name: 'duty-to-report', assessment: isOptimal ? 'Upheld formal disclosure duty through institutional oversight' : 'Violated reporting duty or weaponized disclosure' },
+      ],
+      whoWasHarmed,
+      professionalStandard,
+      betterAction,
+      realWorldRule,
+      mentorVoice,
+    },
+  });
+});
+
+// POST /api/mentor/socratic - Socratic questioning to stimulate critical thinking during active missions
+mentorRouter.post("/socratic", async (req, res) => {
+  const {
+    missionId,
+    missionTitle,
+    stage,
+    inspectedTargetCount = 0,
+    totalTargetCount = 4,
+    playerDoubt = "",
+    operative = { name: "Cadet", trustScore: 30 },
+  } = req.body;
+
+  const client = getGeminiClient();
+
+  if (client) {
+    const prompt = `You are CyberMentor AI. The student operative ${operative.name} is working on mission "${missionTitle}" (${missionId}), currently at phase "${stage}".
+They have examined ${inspectedTargetCount}/${totalTargetCount} technical indicators.
+They asked / pondered: "${playerDoubt || "I am trying to determine what to look at next or if this is safe."}"
+
+Respond in Socratic fashion: do NOT give away the final answer directly. Ask a sharp, insightful guiding question that directs their attention to technical anomalies (e.g. domain spelling, hardware descriptors, beacon RSSI, or sticker edges).
+Output JSON:
+{
+  "guidingQuestion": "<a thought-provoking question directing attention to anomalous data>",
+  "conceptNudge": "<a brief principle hint, max 15 words>",
+  "mentorObservation": "<an observant comment on their current inspection progress>"
+}`;
+
+    const candidateModels = ["gemini-2.5-flash", "gemini-2.0-flash"];
+    for (const modelName of candidateModels) {
+      try {
+        const response = await client.models.generateContent({
+          model: modelName,
+          contents: prompt,
+          config: {
+            responseMimeType: "application/json",
+            temperature: 0.4,
+          },
+        });
+
+        if (response.text) {
+          const parsed = JSON.parse(response.text);
+          return res.json({
+            success: true,
+            source: "gemini",
+            socratic: parsed,
+          });
+        }
+      } catch (err) {
+        console.warn(`[MentorSocratic] Model ${modelName} error, fallback.`);
+      }
+    }
+  }
+
+  // Socratic Knowledge Fallback
+  let guidingQuestion = 'What specific data fields in this artifact differ from what an authentic, official authority would publish?';
+  let conceptNudge = 'Look at the sender domain, physical seams, or hardware descriptors carefully.';
+  let mentorObservation = `You have documented ${inspectedTargetCount} of ${totalTargetCount} technical indicators. Thorough investigation precedes confident judgment.`;
+
+  if (missionId.includes('phishing')) {
+    guidingQuestion = 'Have you compared the exact characters in the email return path with the official university registrar domain? Why might an urgent alert come from a .com instead of .edu?';
+    conceptNudge = 'Look at the leetspeak substitution in the domain.';
+  } else if (missionId.includes('badusb')) {
+    guidingQuestion = 'Why would a storage drive present itself to the operating system as a Human Interface Device (keyboard) instead of mass storage?';
+    conceptNudge = 'Check the bInterfaceClass value in the descriptor table.';
+  } else if (missionId.includes('wifi')) {
+    guidingQuestion = 'Why is the signal strength of this free network so much stronger than the official campus ceiling routers? Who is sitting closest to you?';
+    conceptNudge = 'Compare the -32 dBm near-field signal with the -68 dBm ceiling fixture.';
+  } else if (missionId.includes('qr')) {
+    guidingQuestion = 'Does the physical sticker feel completely flush with the metal kiosk, or can you see another official agency marking concealed underneath?';
+    conceptNudge = 'Inspect the physical sticker seam and the decoded domain authority.';
+  }
+
+  return res.json({
+    success: true,
+    source: 'knowledge-engine',
+    socratic: {
+      guidingQuestion,
+      conceptNudge,
+      mentorObservation,
+    },
+  });
+});
+
